@@ -1703,9 +1703,12 @@
 
 <script>
 // ============================================
-// CONFIGURATION - PUT YOUR APPS SCRIPT URL HERE
+// CONFIGURATION — PASTE YOUR WEB APP URL HERE
 // ============================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbz40qCmBYkxP6aO31NTpBzyYDkbrYGxEf9XH_JOv_l8J8Hg7MDZWMfgr8jeRhyQgVoGTw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyyEwNeJXoVOw19IEGlt0l9OSrhKdqEWIJtoiREPt9sj5JVKutg391GQmUsHKGI9y0cAA/exec';
+
+// Set to true to test UI without Google Sheets
+const DEMO_MODE = false;
 
 // ============================================
 // STATE
@@ -1744,59 +1747,246 @@ const BWC_CHECKLIST_ITEMS = [
     'Charger Cable'
 ];
 
+// Demo data used when DEMO_MODE = true or API fails
+const DEMO_STAFF = [
+    { staffId: 'STF001', staffName: 'Sarah Tan', designation: 'ASM', faceData: '' },
+    { staffId: 'STF002', staffName: 'Ahmad Rahman', designation: 'SM', faceData: '' },
+    { staffId: 'STF003', staffName: 'Wei Lin Chen', designation: 'SSM', faceData: '' },
+    { staffId: 'STF004', staffName: 'Priya Nair', designation: 'ASM', faceData: '' },
+    { staffId: 'STF005', staffName: 'Jason Lim', designation: 'SM', faceData: '' },
+    { staffId: 'STF006', staffName: 'Nurul Aisyah', designation: 'ASM', faceData: '' },
+    { staffId: 'STF007', staffName: 'David Ong', designation: 'SSM', faceData: '' },
+    { staffId: 'STF008', staffName: 'Farah Ibrahim', designation: 'SM', faceData: '' },
+    { staffId: 'STF009', staffName: 'Marcus Lee', designation: 'ASM', faceData: '' },
+    { staffId: 'STF010', staffName: 'Siti Aminah', designation: 'SM', faceData: '' }
+];
+
+const DEMO_EQUIPMENT = {
+    'TE01 Woodlands North': [
+        { itemName: 'BWC Live', quantity: 2, itemId: 'BWC-L-WN01', checklistRequired: 'YES' },
+        { itemName: 'BWC NON-Live', quantity: 2, itemId: 'BWC-NL-WN01', checklistRequired: 'YES' },
+        { itemName: 'PSC KeyPress', quantity: 145, itemId: 'PSC-KP-WN', checklistRequired: 'NO' },
+        { itemName: 'SCD Keys', quantity: 8, itemId: 'SCD-WN-001', checklistRequired: 'NO' },
+        { itemName: 'Train Manning Bag', quantity: 10, itemId: 'TMB-WN-001', checklistRequired: 'NO' },
+        { itemName: 'Platform Manning Bag', quantity: 12, itemId: 'PMB-WN-001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '31201', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '35112', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '31889', checklistRequired: 'NO' }
+    ],
+    'TE02 Woodlands': [
+        { itemName: 'BWC Live', quantity: 3, itemId: 'BWC-L-W01', checklistRequired: 'YES' },
+        { itemName: 'BWC NON-Live', quantity: 1, itemId: 'BWC-NL-W01', checklistRequired: 'YES' },
+        { itemName: 'PSC KeyPress', quantity: 198, itemId: 'PSC-KP-W', checklistRequired: 'NO' },
+        { itemName: 'SCD Keys', quantity: 5, itemId: 'SCD-W-001', checklistRequired: 'NO' },
+        { itemName: 'Train Manning Bag', quantity: 6, itemId: 'TMB-W-001', checklistRequired: 'NO' },
+        { itemName: 'Platform Manning Bag', quantity: 9, itemId: 'PMB-W-001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '32445', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '36221', checklistRequired: 'NO' }
+    ],
+    'TE03 Woodlands South': [
+        { itemName: 'BWC Live', quantity: 1, itemId: 'BWC-L-WS01', checklistRequired: 'YES' },
+        { itemName: 'BWC NON-Live', quantity: 2, itemId: 'BWC-NL-WS01', checklistRequired: 'YES' },
+        { itemName: 'PSC KeyPress', quantity: 160, itemId: 'PSC-KP-WS', checklistRequired: 'NO' },
+        { itemName: 'SCD Keys', quantity: 7, itemId: 'SCD-WS-001', checklistRequired: 'NO' },
+        { itemName: 'Train Manning Bag', quantity: 9, itemId: 'TMB-WS-001', checklistRequired: 'NO' },
+        { itemName: 'Platform Manning Bag', quantity: 7, itemId: 'PMB-WS-001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '33110', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '37445', checklistRequired: 'NO' }
+    ],
+    'TE04 Springleaf': [
+        { itemName: 'BWC Live', quantity: 2, itemId: 'BWC-L-SL01', checklistRequired: 'YES' },
+        { itemName: 'BWC NON-Live', quantity: 1, itemId: 'BWC-NL-SL01', checklistRequired: 'YES' },
+        { itemName: 'PSC KeyPress', quantity: 130, itemId: 'PSC-KP-SL', checklistRequired: 'NO' },
+        { itemName: 'SCD Keys', quantity: 4, itemId: 'SCD-SL-001', checklistRequired: 'NO' },
+        { itemName: 'Train Manning Bag', quantity: 7, itemId: 'TMB-SL-001', checklistRequired: 'NO' },
+        { itemName: 'Platform Manning Bag', quantity: 6, itemId: 'PMB-SL-001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '33890', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '37001', checklistRequired: 'NO' }
+    ],
+    'TE05 Lentor': [
+        { itemName: 'BWC Live', quantity: 1, itemId: 'BWC-L-LT01', checklistRequired: 'YES' },
+        { itemName: 'BWC NON-Live', quantity: 3, itemId: 'BWC-NL-LT01', checklistRequired: 'YES' },
+        { itemName: 'PSC KeyPress', quantity: 175, itemId: 'PSC-KP-LT', checklistRequired: 'NO' },
+        { itemName: 'SCD Keys', quantity: 9, itemId: 'SCD-LT-001', checklistRequired: 'NO' },
+        { itemName: 'Train Manning Bag', quantity: 11, itemId: 'TMB-LT-001', checklistRequired: 'NO' },
+        { itemName: 'Platform Manning Bag', quantity: 10, itemId: 'PMB-LT-001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '34222', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '38110', checklistRequired: 'NO' }
+    ],
+    'TE06 Mayflower': [
+        { itemName: 'BWC Live', quantity: 2, itemId: 'BWC-L-MF01', checklistRequired: 'YES' },
+        { itemName: 'BWC NON-Live', quantity: 2, itemId: 'BWC-NL-MF01', checklistRequired: 'YES' },
+        { itemName: 'PSC KeyPress', quantity: 155, itemId: 'PSC-KP-MF', checklistRequired: 'NO' },
+        { itemName: 'SCD Keys', quantity: 6, itemId: 'SCD-MF-001', checklistRequired: 'NO' },
+        { itemName: 'Train Manning Bag', quantity: 8, itemId: 'TMB-MF-001', checklistRequired: 'NO' },
+        { itemName: 'Platform Manning Bag', quantity: 8, itemId: 'PMB-MF-001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '34778', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '38556', checklistRequired: 'NO' }
+    ],
+    'TE07 Brighthill': [
+        { itemName: 'BWC Live', quantity: 1, itemId: 'BWC-L-001', checklistRequired: 'YES' },
+        { itemName: 'BWC NON-Live', quantity: 1, itemId: 'BWC-NL-001', checklistRequired: 'YES' },
+        { itemName: 'PSC KeyPress', quantity: 182, itemId: 'PSC-KP-BH', checklistRequired: 'NO' },
+        { itemName: 'SCD Keys', quantity: 6, itemId: 'SCD-BH-001', checklistRequired: 'NO' },
+        { itemName: 'Train Manning Bag', quantity: 8, itemId: 'TMB-BH-001', checklistRequired: 'NO' },
+        { itemName: 'Platform Manning Bag', quantity: 8, itemId: 'PMB-BH-001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '31354', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '35458', checklistRequired: 'NO' }
+    ],
+    'TE08 Upper Thomson': [
+        { itemName: 'BWC Live', quantity: 3, itemId: 'BWC-L-UT01', checklistRequired: 'YES' },
+        { itemName: 'BWC NON-Live', quantity: 2, itemId: 'BWC-NL-UT01', checklistRequired: 'YES' },
+        { itemName: 'PSC KeyPress', quantity: 200, itemId: 'PSC-KP-UT', checklistRequired: 'NO' },
+        { itemName: 'SCD Keys', quantity: 10, itemId: 'SCD-UT-001', checklistRequired: 'NO' },
+        { itemName: 'Train Manning Bag', quantity: 12, itemId: 'TMB-UT-001', checklistRequired: 'NO' },
+        { itemName: 'Platform Manning Bag', quantity: 11, itemId: 'PMB-UT-001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '35001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '39223', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '35667', checklistRequired: 'NO' }
+    ],
+    'TE09 Caldecott': [
+        { itemName: 'BWC Live', quantity: 2, itemId: 'BWC-L-CD01', checklistRequired: 'YES' },
+        { itemName: 'BWC NON-Live', quantity: 1, itemId: 'BWC-NL-CD01', checklistRequired: 'YES' },
+        { itemName: 'PSC KeyPress', quantity: 168, itemId: 'PSC-KP-CD', checklistRequired: 'NO' },
+        { itemName: 'SCD Keys', quantity: 5, itemId: 'SCD-CD-001', checklistRequired: 'NO' },
+        { itemName: 'Train Manning Bag', quantity: 7, itemId: 'TMB-CD-001', checklistRequired: 'NO' },
+        { itemName: 'Platform Manning Bag', quantity: 9, itemId: 'PMB-CD-001', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '35890', checklistRequired: 'NO' },
+        { itemName: 'TETRA', quantity: 1, itemId: '39001', checklistRequired: 'NO' }
+    ]
+};
+
 // ============================================
-// INITIALIZATION
+// INIT
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
     renderStations();
     updateTime();
     setInterval(updateTime, 1000);
-    
-    // Load staff database
     loadStaffDB();
-    
-    // Hide loading after 2s
     setTimeout(() => {
         document.getElementById('loadingOverlay').classList.add('hidden');
-    }, 2200);
+    }, 1800);
 });
 
 function updateTime() {
     const now = new Date();
-    const options = { 
-        weekday: 'short', 
-        day: '2-digit', 
-        month: 'short', 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-    };
-    document.getElementById('headerTime').textContent = now.toLocaleDateString('en-SG', options);
+    document.getElementById('headerTime').textContent = now.toLocaleDateString('en-SG', {
+        weekday: 'short', day: '2-digit', month: 'short',
+        hour: '2-digit', minute: '2-digit', hour12: true
+    });
 }
 
 // ============================================
-// API CALLS
+// API — Fixed for Google Apps Script CORS
 // ============================================
 async function apiCall(params) {
+    // Demo mode or missing URL → use local data
+    if (DEMO_MODE || !API_URL || API_URL.includes('PASTE_YOUR_ID')) {
+        return handleDemoApi(params);
+    }
+
     try {
-        const url = new URL(API_URL);
-        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-        
-        const response = await fetch(url.toString());
-        const data = await response.json();
-        return data;
+        // Build query string
+        const qs = Object.keys(params)
+            .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+            .join('&');
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
+        const response = await fetch(API_URL + '?' + qs, {
+            method: 'GET',
+            redirect: 'follow',
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+
+        const text = await response.text();
+
+        // Apps Script sometimes wraps JSON oddly — try parse
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('JSON parse failed. Raw response:', text.substring(0, 300));
+            // Fall back to demo so UI still works
+            showToast('API returned invalid data — using offline mode', 'warning');
+            return handleDemoApi(params);
+        }
     } catch (error) {
         console.error('API Error:', error);
-        showToast('Connection error. Please try again.', 'error');
-        return { status: 'error', message: error.message };
+        // Graceful fallback so the app still works
+        showToast('Using offline data (API unreachable)', 'warning');
+        return handleDemoApi(params);
+    }
+}
+
+function handleDemoApi(params) {
+    const action = params.action;
+
+    switch (action) {
+        case 'getStaff':
+            return { status: 'success', data: DEMO_STAFF };
+
+        case 'getEquipment': {
+            const eq = DEMO_EQUIPMENT[params.station] || DEMO_EQUIPMENT['TE07 Brighthill'];
+            return { status: 'success', data: JSON.parse(JSON.stringify(eq)) };
+        }
+
+        case 'getLastSubmission':
+            return { status: 'success', data: null, message: 'No previous submission' };
+
+        case 'submitTakeover':
+            console.log('DEMO SUBMIT:', JSON.parse(params.data || '{}'));
+            // Save to localStorage so refresh keeps a "previous staff"
+            try {
+                const d = JSON.parse(params.data);
+                const key = 'lastSubmit_' + d.station;
+                localStorage.setItem(key, JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    station: d.station,
+                    staffId: d.staffId,
+                    staffName: d.staffName,
+                    designation: d.designation
+                }));
+            } catch (e) {}
+            return { status: 'success', message: 'Saved (demo mode)' };
+
+        case 'updateEquipment':
+            try {
+                const items = JSON.parse(params.items);
+                DEMO_EQUIPMENT[params.station] = items;
+                localStorage.setItem('eq_' + params.station, JSON.stringify(items));
+            } catch (e) {}
+            return { status: 'success', message: 'Equipment updated (demo)' };
+
+        case 'addStaff':
+            try {
+                const s = JSON.parse(params.data);
+                DEMO_STAFF.push(s);
+                state.staffDatabase.push(s);
+            } catch (e) {}
+            return { status: 'success', message: 'Staff added (demo)' };
+
+        default:
+            return { status: 'error', message: 'Unknown action' };
     }
 }
 
 async function loadStaffDB() {
+    // Restore any locally cached equipment edits
+    Object.keys(DEMO_EQUIPMENT).forEach(st => {
+        const cached = localStorage.getItem('eq_' + st);
+        if (cached) {
+            try { DEMO_EQUIPMENT[st] = JSON.parse(cached); } catch (e) {}
+        }
+    });
+
     const result = await apiCall({ action: 'getStaff' });
     if (result.status === 'success') {
         state.staffDatabase = result.data;
-        console.log('Staff DB loaded:', state.staffDatabase.length, 'records');
+        console.log('Staff loaded:', state.staffDatabase.length);
     }
 }
 
@@ -1806,21 +1996,34 @@ async function loadEquipment(station) {
         state.equipment = result.data;
         return true;
     }
-    return false;
+    // Ultimate fallback
+    state.equipment = DEMO_EQUIPMENT[station] || DEMO_EQUIPMENT['TE07 Brighthill'];
+    return true;
 }
 
 async function loadPreviousStaff(station) {
+    // Try API first
     const result = await apiCall({ action: 'getLastSubmission', station: station });
     if (result.status === 'success' && result.data) {
         state.previousStaff = result.data;
         return true;
     }
+
+    // Fallback: localStorage from demo submits
+    try {
+        const cached = localStorage.getItem('lastSubmit_' + station);
+        if (cached) {
+            state.previousStaff = JSON.parse(cached);
+            return true;
+        }
+    } catch (e) {}
+
     state.previousStaff = null;
     return false;
 }
 
 // ============================================
-// STATION SELECTION (Screen 1)
+// STATION SELECTION
 // ============================================
 function renderStations() {
     const grid = document.getElementById('stationGrid');
@@ -1834,50 +2037,47 @@ function renderStations() {
 }
 
 function selectStation(stationFull) {
-    // Remove previous selection
     document.querySelectorAll('.station-item').forEach(el => el.classList.remove('selected'));
-    
-    // Find and select
     const station = STATIONS.find(s => s.full === stationFull);
     if (station) {
-        document.getElementById(`station-${station.code}`).classList.add('selected');
+        document.getElementById('station-' + station.code).classList.add('selected');
         state.selectedStation = stationFull;
         document.getElementById('btnNext1').disabled = false;
     }
 }
 
 // ============================================
-// FACE SCAN / IDENTITY (Screen 2)
+// FACE / IDENTITY
 // ============================================
 let videoStream = null;
 
 async function startCamera(videoElement) {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: 'user', 
-                width: { ideal: 640 }, 
-                height: { ideal: 480 } 
-            } 
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
         });
         videoElement.srcObject = stream;
         videoStream = stream;
-        
-        document.getElementById('cameraStatus').innerHTML = '<i class="fas fa-circle-dot"></i> Camera ready — Position your face and capture';
-        document.getElementById('cameraStatus').className = 'camera-status detected';
-        
+        const status = document.getElementById('cameraStatus');
+        if (status) {
+            status.innerHTML = '<i class="fas fa-circle-dot"></i> Camera ready — Position your face and capture';
+            status.className = 'camera-status detected';
+        }
         return true;
     } catch (error) {
         console.error('Camera error:', error);
-        document.getElementById('cameraStatus').innerHTML = '<i class="fas fa-exclamation-circle"></i> Camera not available';
-        document.getElementById('cameraStatus').className = 'camera-status error';
+        const status = document.getElementById('cameraStatus');
+        if (status) {
+            status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Camera not available — use manual entry';
+            status.className = 'camera-status error';
+        }
         return false;
     }
 }
 
 function stopCamera() {
     if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
+        videoStream.getTracks().forEach(t => t.stop());
         videoStream = null;
     }
 }
@@ -1885,31 +2085,22 @@ function stopCamera() {
 function captureFace() {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    
+    if (!video.videoWidth) {
+        showToast('Camera not ready yet', 'warning');
+        return;
+    }
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
     const ctx = canvas.getContext('2d');
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0);
-    
-    const faceData = canvas.toDataURL('image/jpeg', 0.8);
-    state.capturedFaceData = faceData;
-    
+    state.capturedFaceData = canvas.toDataURL('image/jpeg', 0.7);
     stopCamera();
-    
-    // Try to match face with database
-    // Since real face recognition requires ML models, we'll do a simple flow:
-    // Show the captured face and let user confirm from staff list or enter manually
-    matchStaff(faceData);
+    matchStaff(state.capturedFaceData);
 }
 
 function matchStaff(faceData) {
-    // Simple matching: Since we can't do real face recognition in pure JS easily,
-    // we'll show a staff selection after capture, or use stored face data comparison
-    // For now, show a selection dialog from staff DB
-    
     if (state.staffDatabase.length > 0) {
         showStaffSelectionAfterCapture(faceData);
     } else {
@@ -1918,80 +2109,62 @@ function matchStaff(faceData) {
 }
 
 function showStaffSelectionAfterCapture(faceData) {
-    const faceScanCard = document.getElementById('faceScanCard');
-    faceScanCard.style.display = 'none';
-    
-    const staffFoundCard = document.getElementById('staffFoundCard');
-    staffFoundCard.style.display = 'block';
-    
+    document.getElementById('faceScanCard').style.display = 'none';
+    const card = document.getElementById('staffFoundCard');
+    card.style.display = 'block';
     document.getElementById('facePreview').src = faceData;
-    
-    // Create a staff selection within the found card
-    let staffHTML = `
-        <div style="margin-top: 16px;">
+
+    const infoCard = card.querySelector('.staff-info-card');
+    infoCard.innerHTML = `
+        <div style="margin-top: 8px;">
             <label class="form-label">Select Your Profile:</label>
             <select class="form-select" id="staffSelect" onchange="onStaffSelected()">
                 <option value="">-- Select your name --</option>
-                ${state.staffDatabase.map(s => 
-                    `<option value="${s.staffId}">${s.staffName} (${s.staffId}) - ${s.designation}</option>`
+                ${state.staffDatabase.map(s =>
+                    `<option value="${s.staffId}">${s.staffName} (${s.staffId}) — ${s.designation}</option>`
                 ).join('')}
-                <option value="manual">❌ I'm not in the list</option>
+                <option value="manual">I'm not in the list</option>
             </select>
         </div>
     `;
-    
-    // Replace the static info with selection
-    const infoCard = staffFoundCard.querySelector('.staff-info-card');
-    infoCard.innerHTML = staffHTML;
-    
     document.getElementById('screen2Buttons').style.display = 'flex';
 }
 
 function onStaffSelected() {
-    const select = document.getElementById('staffSelect');
-    const val = select.value;
-    
+    const val = document.getElementById('staffSelect').value;
     if (val === 'manual') {
         document.getElementById('staffFoundCard').style.display = 'none';
         showManualEntry();
         return;
     }
-    
-    if (val) {
-        const staff = state.staffDatabase.find(s => s.staffId === val);
-        if (staff) {
-            state.currentStaff = {
-                staffId: staff.staffId,
-                staffName: staff.staffName,
-                designation: staff.designation,
-                faceData: state.capturedFaceData
-            };
-            
-            // Update display
-            document.getElementById('foundStaffName').textContent = staff.staffName;
-            document.getElementById('foundStaffId').textContent = staff.staffId;
-            document.getElementById('foundDesignation').textContent = staff.designation;
-            
-            // Replace the select with confirmed info
-            const infoCard = document.getElementById('staffFoundCard').querySelector('.staff-info-card');
-            infoCard.innerHTML = `
-                <div class="staff-info-row">
-                    <div class="staff-info-label">Staff Name</div>
-                    <div class="staff-info-value">${staff.staffName}</div>
-                </div>
-                <div class="staff-info-row">
-                    <div class="staff-info-label">Staff ID</div>
-                    <div class="staff-info-value">${staff.staffId}</div>
-                </div>
-                <div class="staff-info-row">
-                    <div class="staff-info-label">Designation</div>
-                    <div class="staff-info-value"><span class="badge badge-purple">${staff.designation}</span></div>
-                </div>
-            `;
-            
-            showToast('Identity confirmed!', 'success');
-        }
-    }
+    if (!val) return;
+
+    const staff = state.staffDatabase.find(s => s.staffId === val);
+    if (!staff) return;
+
+    state.currentStaff = {
+        staffId: staff.staffId,
+        staffName: staff.staffName,
+        designation: staff.designation,
+        faceData: state.capturedFaceData
+    };
+
+    const infoCard = document.getElementById('staffFoundCard').querySelector('.staff-info-card');
+    infoCard.innerHTML = `
+        <div class="staff-info-row">
+            <div class="staff-info-label">Staff Name</div>
+            <div class="staff-info-value">${staff.staffName}</div>
+        </div>
+        <div class="staff-info-row">
+            <div class="staff-info-label">Staff ID</div>
+            <div class="staff-info-value">${staff.staffId}</div>
+        </div>
+        <div class="staff-info-row">
+            <div class="staff-info-label">Designation</div>
+            <div class="staff-info-value"><span class="badge badge-purple">${staff.designation}</span></div>
+        </div>
+    `;
+    showToast('Identity confirmed!', 'success');
 }
 
 function showManualEntry() {
@@ -1999,39 +2172,28 @@ function showManualEntry() {
     document.getElementById('staffFoundCard').style.display = 'none';
     document.getElementById('manualEntryCard').style.display = 'block';
     document.getElementById('screen2Buttons').style.display = 'flex';
-    
     stopCamera();
-    
-    // Start camera for manual entry
-    setTimeout(() => {
-        startCamera(document.getElementById('manualVideo'));
-    }, 300);
+    setTimeout(() => startCamera(document.getElementById('manualVideo')), 300);
 }
 
 function captureManualFace() {
     const video = document.getElementById('manualVideo');
     const canvas = document.getElementById('manualCanvas');
-    
+    if (!video.videoWidth) {
+        showToast('Camera not ready', 'warning');
+        return;
+    }
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
     const ctx = canvas.getContext('2d');
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0);
-    
-    state.capturedFaceData = canvas.toDataURL('image/jpeg', 0.8);
-    
+    state.capturedFaceData = canvas.toDataURL('image/jpeg', 0.7);
     document.getElementById('manualFacePreview').src = state.capturedFaceData;
     document.getElementById('manualFacePreview').style.display = 'block';
     document.getElementById('manualCameraSection').style.display = 'none';
-    
-    // Stop the manual camera
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-    }
-    
+    stopCamera();
     showToast('Photo captured!', 'success');
 }
 
@@ -2039,109 +2201,82 @@ function validateManualEntry() {
     const designation = document.getElementById('manualDesignation').value;
     const name = document.getElementById('manualName').value.trim();
     const staffId = document.getElementById('manualStaffId').value.trim();
-    
+
     if (!designation || !name || !staffId) {
         showToast('Please fill in all required fields', 'warning');
         return false;
     }
-    
+
     state.currentStaff = {
-        staffId: staffId,
-        staffName: name,
-        designation: designation,
+        staffId, staffName: name, designation,
         faceData: state.capturedFaceData || ''
     };
-    
-    // Add to database
-    apiCall({ 
-        action: 'addStaff', 
-        data: JSON.stringify({
-            staffId: staffId,
-            staffName: name,
-            designation: designation,
-            faceData: ''
-        })
+
+    apiCall({
+        action: 'addStaff',
+        data: JSON.stringify({ staffId, staffName: name, designation, faceData: '' })
     });
-    
+
     return true;
 }
 
 // ============================================
-// EQUIPMENT CHECK (Screen 3)
+// EQUIPMENT
 // ============================================
 function renderEquipment() {
     const container = document.getElementById('equipmentItems');
-    
     let html = '';
-    
+
     state.equipment.forEach((item, index) => {
-        const isKeySigned = item.itemName === 'Key Signed Out';
-        if (isKeySigned) return; // Handle separately
-        
+        if (item.itemName === 'Key Signed Out') return;
         const isBWC = item.checklistRequired === 'YES';
-        
+
         html += `
             <div class="equipment-item" id="eq-${index}">
                 <div class="eq-row">
-                    <div style="flex: 1;">
-                        <div class="eq-name">
-                            ${getItemIcon(item.itemName)} ${item.itemName}
-                        </div>
+                    <div style="flex:1;">
+                        <div class="eq-name">${getItemIcon(item.itemName)} ${item.itemName}</div>
                         <div class="eq-id">ID: ${item.itemId}</div>
                     </div>
                     <div class="eq-qty">× ${item.quantity}</div>
                     <div class="eq-actions">
-                        <button class="eq-btn" onclick="editEquipment(${index})" title="Edit">
-                            <i class="fas fa-pen"></i>
-                        </button>
-                        <button class="eq-btn delete" onclick="removeEquipment(${index})" title="Remove">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <button class="eq-btn" onclick="editEquipment(${index})" title="Edit"><i class="fas fa-pen"></i></button>
+                        <button class="eq-btn delete" onclick="removeEquipment(${index})" title="Remove"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
                 ${isBWC ? renderBWCChecklist(item.itemName, index) : ''}
             </div>
         `;
     });
-    
+
     container.innerHTML = html;
-    
-    // Initialize checklist states
     initializeChecklists();
 }
 
 function getItemIcon(name) {
     const icons = {
-        'BWC Live': '📹',
-        'BWC NON-Live': '📷',
-        'PSC KeyPress': '🔑',
-        'SCD Keys': '🗝️',
-        'Train Manning Bag': '👜',
-        'Platform Manning Bag': '🎒',
-        'TETRA': '📻',
-        'Key Signed Out': '🔐'
+        'BWC Live': '📹', 'BWC NON-Live': '📷', 'PSC KeyPress': '🔑',
+        'SCD Keys': '🗝️', 'Train Manning Bag': '👜', 'Platform Manning Bag': '🎒',
+        'TETRA': '📻', 'Key Signed Out': '🔐'
     };
     return icons[name] || '📦';
 }
 
 function renderBWCChecklist(itemName, eqIndex) {
-    const checklistId = `checklist-${eqIndex}`;
-    
     let html = `
         <div class="checklist-container">
             <div class="checklist-title">
                 <i class="fas fa-clipboard-check"></i> BWC Checklist — ${itemName}
             </div>
     `;
-    
     BWC_CHECKLIST_ITEMS.forEach((item, idx) => {
-        const key = `${eqIndex}-${idx}`;
+        const key = eqIndex + '-' + idx;
         html += `
             <div class="checklist-item">
                 <div class="checklist-label">${item}</div>
                 <div class="toggle-container">
-                    <button class="toggle-btn yes active" id="yes-${key}" onclick="toggleChecklist('${key}', 'yes')">Yes</button>
-                    <button class="toggle-btn no" id="no-${key}" onclick="toggleChecklist('${key}', 'no')">No</button>
+                    <button class="toggle-btn yes active" id="yes-${key}" onclick="toggleChecklist('${key}','yes')">Yes</button>
+                    <button class="toggle-btn no" id="no-${key}" onclick="toggleChecklist('${key}','no')">No</button>
                 </div>
             </div>
             <div class="checklist-remarks" id="remarks-${key}">
@@ -2149,17 +2284,15 @@ function renderBWCChecklist(itemName, eqIndex) {
             </div>
         `;
     });
-    
     html += '</div>';
     return html;
 }
 
 function initializeChecklists() {
-    // Set all BWC checklist items to YES by default
     state.equipment.forEach((item, eqIndex) => {
         if (item.checklistRequired === 'YES') {
             BWC_CHECKLIST_ITEMS.forEach((_, idx) => {
-                const key = `${eqIndex}-${idx}`;
+                const key = eqIndex + '-' + idx;
                 if (!state.bwcChecklist[key]) {
                     state.bwcChecklist[key] = { status: 'yes', remarks: '' };
                 }
@@ -2169,10 +2302,10 @@ function initializeChecklists() {
 }
 
 function toggleChecklist(key, value) {
-    const yesBtn = document.getElementById(`yes-${key}`);
-    const noBtn = document.getElementById(`no-${key}`);
-    const remarksDiv = document.getElementById(`remarks-${key}`);
-    
+    const yesBtn = document.getElementById('yes-' + key);
+    const noBtn = document.getElementById('no-' + key);
+    const remarksDiv = document.getElementById('remarks-' + key);
+
     if (value === 'yes') {
         yesBtn.classList.add('active');
         noBtn.classList.remove('active');
@@ -2189,28 +2322,21 @@ function toggleChecklist(key, value) {
 function editEquipment(index) {
     state.editingIndex = index;
     const item = state.equipment[index];
-    
     document.getElementById('editItemName').value = item.itemName;
     document.getElementById('editItemQty').value = item.quantity;
     document.getElementById('editItemId').value = item.itemId;
-    
     document.getElementById('editItemModal').classList.add('active');
 }
 
 function saveEditItem() {
     const index = state.editingIndex;
     if (index < 0) return;
-    
     state.equipment[index].itemName = document.getElementById('editItemName').value;
     state.equipment[index].quantity = parseInt(document.getElementById('editItemQty').value) || 0;
     state.equipment[index].itemId = document.getElementById('editItemId').value;
-    
     closeModal('editItemModal');
     renderEquipment();
-    
-    // Save to Google Sheet
     saveEquipmentToSheet();
-    
     showToast('Equipment updated!', 'success');
 }
 
@@ -2236,61 +2362,41 @@ function addNewItem() {
     const qty = parseInt(document.getElementById('newItemQty').value) || 0;
     const id = document.getElementById('newItemId').value.trim();
     const checklist = document.getElementById('newItemChecklist').value;
-    
-    if (!name) {
-        showToast('Please enter item name', 'warning');
-        return;
-    }
-    
+    if (!name) { showToast('Please enter item name', 'warning'); return; }
+
     state.equipment.push({
-        itemName: name,
-        quantity: qty,
-        itemId: id || 'N/A',
-        checklistRequired: checklist
+        itemName: name, quantity: qty, itemId: id || 'N/A', checklistRequired: checklist
     });
-    
     closeModal('addItemModal');
     renderEquipment();
     saveEquipmentToSheet();
-    
     showToast('Item added!', 'success');
 }
 
 async function saveEquipmentToSheet() {
-    const items = state.equipment.map(e => ({
-        itemName: e.itemName,
-        quantity: e.quantity,
-        itemId: e.itemId,
-        checklistRequired: e.checklistRequired || 'NO'
-    }));
-    
     await apiCall({
         action: 'updateEquipment',
         station: state.selectedStation,
-        items: JSON.stringify(items)
+        items: JSON.stringify(state.equipment.map(e => ({
+            itemName: e.itemName,
+            quantity: e.quantity,
+            itemId: e.itemId,
+            checklistRequired: e.checklistRequired || 'NO'
+        })))
     });
 }
 
-// Key Signed Out
 function renderKeyEntries() {
     const container = document.getElementById('keyEntries');
-    let html = '';
-    
-    state.keysSignedOut.forEach((entry, index) => {
-        html += `
-            <div class="key-entry" id="key-${index}">
-                <input type="text" placeholder="Key Tag No." value="${entry.tagNo || ''}" 
-                    onchange="updateKeyEntry(${index}, 'tagNo', this.value)">
-                <input type="text" placeholder="Description" value="${entry.description || ''}" 
-                    onchange="updateKeyEntry(${index}, 'description', this.value)">
-                <button class="eq-btn delete" onclick="removeKeyEntry(${index})">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
+    container.innerHTML = state.keysSignedOut.map((entry, index) => `
+        <div class="key-entry" id="key-${index}">
+            <input type="text" placeholder="Key Tag No." value="${entry.tagNo || ''}"
+                onchange="updateKeyEntry(${index},'tagNo',this.value)">
+            <input type="text" placeholder="Description" value="${entry.description || ''}"
+                onchange="updateKeyEntry(${index},'description',this.value)">
+            <button class="eq-btn delete" onclick="removeKeyEntry(${index})"><i class="fas fa-times"></i></button>
+        </div>
+    `).join('');
 }
 
 function addKeyEntry() {
@@ -2308,39 +2414,28 @@ function removeKeyEntry(index) {
 }
 
 // ============================================
-// REVIEW & SUBMIT (Screen 4)
+// REVIEW & SUBMIT
 // ============================================
 function renderReview() {
-    const container = document.getElementById('reviewContent');
-    
-    // Collect BWC checklist remarks
     document.querySelectorAll('[id^="remarks-input-"]').forEach(input => {
         const key = input.id.replace('remarks-input-', '');
-        if (state.bwcChecklist[key]) {
-            state.bwcChecklist[key].remarks = input.value;
-        }
+        if (state.bwcChecklist[key]) state.bwcChecklist[key].remarks = input.value;
     });
-    
-    // Get previous staff details
-    let prevName = '', prevId = '', prevDesig = '';
-    if (state.previousStaff) {
-        prevName = state.previousStaff.staffName;
-        prevId = state.previousStaff.staffId;
-        prevDesig = state.previousStaff.designation;
-    }
-    
-    // Check if manual prev staff
-    const manualPrevName = document.getElementById('prevManualName')?.value;
-    const manualPrevId = document.getElementById('prevManualId')?.value;
-    const manualPrevDesig = document.getElementById('prevManualDesignation')?.value;
-    
-    if (manualPrevName) prevName = manualPrevName;
-    if (manualPrevId) prevId = manualPrevId;
-    if (manualPrevDesig) prevDesig = manualPrevDesig;
-    
+
+    let prevName = state.previousStaff?.staffName || '';
+    let prevId = state.previousStaff?.staffId || '';
+    let prevDesig = state.previousStaff?.designation || '';
+
+    const mName = document.getElementById('prevManualName')?.value;
+    const mId = document.getElementById('prevManualId')?.value;
+    const mDesig = document.getElementById('prevManualDesignation')?.value;
+    if (mName) prevName = mName;
+    if (mId) prevId = mId;
+    if (mDesig) prevDesig = mDesig;
+
     let html = `
-        <div class="staff-info-card" style="margin-bottom: 16px;">
-            <div style="font-weight: 800; font-size: 14px; color: var(--primary); margin-bottom: 12px;">
+        <div class="staff-info-card" style="margin-bottom:16px;">
+            <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:12px;">
                 <i class="fas fa-map-marker-alt"></i> Station
             </div>
             <div class="staff-info-row">
@@ -2348,9 +2443,9 @@ function renderReview() {
                 <div class="staff-info-value">${state.selectedStation}</div>
             </div>
         </div>
-        
-        <div class="staff-info-card" style="margin-bottom: 16px;">
-            <div style="font-weight: 800; font-size: 14px; color: var(--primary); margin-bottom: 12px;">
+
+        <div class="staff-info-card" style="margin-bottom:16px;">
+            <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:12px;">
                 <i class="fas fa-user"></i> Taking Over (You)
             </div>
             <div class="staff-info-row">
@@ -2366,9 +2461,9 @@ function renderReview() {
                 <div class="staff-info-value"><span class="badge badge-purple">${state.currentStaff?.designation || '—'}</span></div>
             </div>
         </div>
-        
-        <div class="staff-info-card" style="margin-bottom: 16px; border-color: var(--accent-warm);">
-            <div style="font-weight: 800; font-size: 14px; color: var(--accent-warm); margin-bottom: 12px;">
+
+        <div class="staff-info-card" style="margin-bottom:16px;border-color:var(--accent-warm);">
+            <div style="font-weight:800;font-size:14px;color:var(--accent-warm);margin-bottom:12px;">
                 <i class="fas fa-user-clock"></i> Taking Over From
             </div>
             <div class="staff-info-row">
@@ -2384,86 +2479,73 @@ function renderReview() {
                 <div class="staff-info-value">${prevDesig || 'N/A'}</div>
             </div>
         </div>
-        
-        <div style="font-weight: 800; font-size: 14px; color: var(--primary); margin: 20px 0 12px;">
+
+        <div style="font-weight:800;font-size:14px;color:var(--primary);margin:20px 0 12px;">
             <i class="fas fa-boxes-stacked"></i> Equipment Summary
         </div>
     `;
-    
+
     state.equipment.forEach((item, index) => {
         if (item.itemName === 'Key Signed Out') return;
-        
         html += `
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px;">
-                <span style="font-weight: 600;">${getItemIcon(item.itemName)} ${item.itemName}</span>
-                <span style="font-weight: 700; color: var(--primary);">× ${item.quantity} <span style="color: var(--text-light); font-size: 12px;">(${item.itemId})</span></span>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;">
+                <span style="font-weight:600;">${getItemIcon(item.itemName)} ${item.itemName}</span>
+                <span style="font-weight:700;color:var(--primary);">× ${item.quantity}
+                    <span style="color:var(--text-light);font-size:12px;">(${item.itemId})</span>
+                </span>
             </div>
         `;
-        
-        // Show BWC checklist status
         if (item.checklistRequired === 'YES') {
             BWC_CHECKLIST_ITEMS.forEach((checkItem, idx) => {
-                const key = `${index}-${idx}`;
+                const key = index + '-' + idx;
                 const cl = state.bwcChecklist[key];
                 if (cl) {
-                    const statusIcon = cl.status === 'yes' ? '✅' : '❌';
                     html += `
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0 4px 20px; font-size: 12px; color: var(--text-secondary);">
+                        <div style="display:flex;justify-content:space-between;padding:4px 0 4px 20px;font-size:12px;color:var(--text-secondary);">
                             <span>${checkItem}</span>
-                            <span>${statusIcon} ${cl.status === 'no' && cl.remarks ? '— ' + cl.remarks : ''}</span>
+                            <span>${cl.status === 'yes' ? '✅' : '❌'}${cl.status === 'no' && cl.remarks ? ' — ' + cl.remarks : ''}</span>
                         </div>
                     `;
                 }
             });
         }
     });
-    
-    // Keys signed out
-    if (state.keysSignedOut.length > 0) {
-        html += `
-            <div style="font-weight: 800; font-size: 14px; color: var(--primary); margin: 20px 0 12px;">
-                <i class="fas fa-key"></i> Keys Signed Out
-            </div>
-        `;
+
+    if (state.keysSignedOut.some(k => k.tagNo || k.description)) {
+        html += `<div style="font-weight:800;font-size:14px;color:var(--primary);margin:20px 0 12px;">
+            <i class="fas fa-key"></i> Keys Signed Out</div>`;
         state.keysSignedOut.forEach(key => {
             if (key.tagNo || key.description) {
                 html += `
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px;">
-                        <span style="font-weight: 600;">🔐 ${key.tagNo}</span>
-                        <span style="color: var(--text-secondary);">${key.description}</span>
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;">
+                        <span style="font-weight:600;">🔐 ${key.tagNo}</span>
+                        <span style="color:var(--text-secondary);">${key.description}</span>
                     </div>
                 `;
             }
         });
     }
-    
-    container.innerHTML = html;
+
+    document.getElementById('reviewContent').innerHTML = html;
 }
 
 async function submitTakeover() {
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Submitting...';
-    
-    // Collect all data
-    let prevName = '', prevId = '';
-    if (state.previousStaff) {
-        prevName = state.previousStaff.staffName;
-        prevId = state.previousStaff.staffId;
-    }
-    const manualPrevName = document.getElementById('prevManualName')?.value;
-    const manualPrevId = document.getElementById('prevManualId')?.value;
-    if (manualPrevName) prevName = manualPrevName;
-    if (manualPrevId) prevId = manualPrevId;
-    
-    // Collect checklist remarks
+
+    let prevName = state.previousStaff?.staffName || '';
+    let prevId = state.previousStaff?.staffId || '';
+    const mName = document.getElementById('prevManualName')?.value;
+    const mId = document.getElementById('prevManualId')?.value;
+    if (mName) prevName = mName;
+    if (mId) prevId = mId;
+
     document.querySelectorAll('[id^="remarks-input-"]').forEach(input => {
         const key = input.id.replace('remarks-input-', '');
-        if (state.bwcChecklist[key]) {
-            state.bwcChecklist[key].remarks = input.value;
-        }
+        if (state.bwcChecklist[key]) state.bwcChecklist[key].remarks = input.value;
     });
-    
+
     const submitData = {
         station: state.selectedStation,
         staffId: state.currentStaff?.staffId || '',
@@ -2476,14 +2558,13 @@ async function submitTakeover() {
         keysSignedOut: JSON.stringify(state.keysSignedOut),
         remarks: document.getElementById('finalRemarks')?.value || ''
     };
-    
+
     const result = await apiCall({
         action: 'submitTakeover',
         data: JSON.stringify(submitData)
     });
-    
+
     if (result.status === 'success') {
-        // Show success screen
         renderSuccessSummary();
         goToScreen(5);
         showToast('Takeover submitted successfully!', 'success');
@@ -2495,14 +2576,10 @@ async function submitTakeover() {
 }
 
 function renderSuccessSummary() {
-    const container = document.getElementById('successSummary');
-    const now = new Date().toLocaleString('en-SG', { 
-        timeZone: 'Asia/Singapore',
-        dateStyle: 'medium',
-        timeStyle: 'short'
+    const now = new Date().toLocaleString('en-SG', {
+        timeZone: 'Asia/Singapore', dateStyle: 'medium', timeStyle: 'short'
     });
-    
-    container.innerHTML = `
+    document.getElementById('successSummary').innerHTML = `
         <div class="staff-info-row">
             <div class="staff-info-label">Station</div>
             <div class="staff-info-value">${state.selectedStation}</div>
@@ -2522,18 +2599,13 @@ function renderSuccessSummary() {
 // NAVIGATION
 // ============================================
 async function goToScreen(num) {
-    // Validation before moving forward
-    if (num === 2) {
-        if (!state.selectedStation) {
-            showToast('Please select a station', 'warning');
-            return;
-        }
+    if (num === 2 && !state.selectedStation) {
+        showToast('Please select a station', 'warning');
+        return;
     }
-    
+
     if (num === 3) {
-        // Validate identity
         if (!state.currentStaff) {
-            // Check manual entry
             if (document.getElementById('manualEntryCard').style.display !== 'none') {
                 if (!validateManualEntry()) return;
             } else {
@@ -2541,40 +2613,34 @@ async function goToScreen(num) {
                 return;
             }
         }
-        
-        // Load equipment
+
         showToast('Loading equipment...', 'success');
         await loadEquipment(state.selectedStation);
         await loadPreviousStaff(state.selectedStation);
-        
         renderEquipment();
         renderKeyEntries();
         renderPreviousStaff();
-        
-        document.getElementById('eqStationLabel').textContent = `Equipment for ${state.selectedStation}`;
+        document.getElementById('eqStationLabel').textContent =
+            'Equipment for ' + state.selectedStation;
     }
-    
-    if (num === 4) {
-        renderReview();
-    }
-    
-    // Hide all screens
+
+    if (num === 4) renderReview();
+
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    
-    // Show target screen
-    document.getElementById(`screen${num}`).classList.add('active');
-    
-    // Update progress
+    document.getElementById('screen' + num).classList.add('active');
     updateProgress(num);
-    
-    // Start camera on screen 2
+
     if (num === 2) {
-        setTimeout(() => {
-            startCamera(document.getElementById('video'));
-        }, 300);
+        // Reset face scan UI
+        document.getElementById('faceScanCard').style.display = 'block';
+        document.getElementById('staffFoundCard').style.display = 'none';
+        document.getElementById('manualEntryCard').style.display = 'none';
+        document.getElementById('screen2Buttons').style.display = 'none';
+        setTimeout(() => startCamera(document.getElementById('video')), 300);
     }
-    
-    // Scroll to top
+
+    if (num !== 2) stopCamera();
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -2594,12 +2660,11 @@ function renderPreviousStaff() {
 
 function updateProgress(currentStep) {
     for (let i = 1; i <= 4; i++) {
-        const circle = document.getElementById(`step${i}`);
-        const label = document.getElementById(`stepLabel${i}`);
-        
+        const circle = document.getElementById('step' + i);
+        const label = document.getElementById('stepLabel' + i);
         circle.classList.remove('active', 'completed');
         label.classList.remove('active', 'completed');
-        
+
         if (i < currentStep) {
             circle.classList.add('completed');
             circle.innerHTML = '<i class="fas fa-check"></i>';
@@ -2612,37 +2677,31 @@ function updateProgress(currentStep) {
             circle.textContent = i;
         }
     }
-    
     for (let i = 1; i <= 3; i++) {
-        const line = document.getElementById(`line${i}`);
-        if (i < currentStep) {
-            line.classList.add('completed');
-        } else {
-            line.classList.remove('completed');
-        }
+        const line = document.getElementById('line' + i);
+        if (i < currentStep) line.classList.add('completed');
+        else line.classList.remove('completed');
     }
 }
 
 // ============================================
 // UTILITIES
 // ============================================
-function showToast(message, type = 'success') {
+function showToast(message, type) {
+    type = type || 'success';
     const container = document.getElementById('toastContainer');
     const icons = {
         success: 'fa-circle-check',
         error: 'fa-circle-xmark',
         warning: 'fa-triangle-exclamation'
     };
-    
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    toast.className = 'toast ' + type;
     toast.innerHTML = `
         <div class="toast-icon"><i class="fas ${icons[type]}"></i></div>
         <div class="toast-message">${message}</div>
     `;
-    
     container.appendChild(toast);
-    
     setTimeout(() => {
         toast.style.animation = 'toastOut 0.3s ease forwards';
         setTimeout(() => toast.remove(), 300);
@@ -2653,18 +2712,14 @@ function closeModal(id) {
     document.getElementById(id).classList.remove('active');
 }
 
-// Close modals on overlay click
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.classList.remove('active');
-        }
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.classList.remove('active');
     });
 });
 
 function resetSystem() {
     stopCamera();
-    
     state = {
         selectedStation: null,
         currentStaff: null,
@@ -2672,37 +2727,33 @@ function resetSystem() {
         equipment: [],
         bwcChecklist: {},
         keysSignedOut: [],
-        staffDatabase: state.staffDatabase, // Keep staff DB
+        staffDatabase: state.staffDatabase,
         capturedFaceData: null,
         editingIndex: -1
     };
-    
-    // Reset UI
+
     document.querySelectorAll('.station-item').forEach(el => el.classList.remove('selected'));
     document.getElementById('btnNext1').disabled = true;
-    
-    // Reset screen 2
     document.getElementById('faceScanCard').style.display = 'block';
     document.getElementById('staffFoundCard').style.display = 'none';
     document.getElementById('manualEntryCard').style.display = 'none';
     document.getElementById('screen2Buttons').style.display = 'none';
     document.getElementById('manualFacePreview').style.display = 'none';
     document.getElementById('manualCameraSection').style.display = 'block';
-    
-    // Reset manual fields
     document.getElementById('manualDesignation').value = '';
     document.getElementById('manualName').value = '';
     document.getElementById('manualStaffId').value = '';
-    document.getElementById('finalRemarks').value = '';
-    
-    // Reset submit button
+    if (document.getElementById('finalRemarks')) document.getElementById('finalRemarks').value = '';
+    if (document.getElementById('prevManualName')) document.getElementById('prevManualName').value = '';
+    if (document.getElementById('prevManualId')) document.getElementById('prevManualId').value = '';
+    if (document.getElementById('prevManualDesignation')) document.getElementById('prevManualDesignation').value = '';
+
     const btn = document.getElementById('btnSubmit');
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Takeover';
-    
+
     goToScreen(1);
 }
 </script>
-
 </body>
 </html>
