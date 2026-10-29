@@ -439,23 +439,47 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!e.target.closest('.search-container')) document.getElementById('staffDropdownOptions').style.display = 'none';
     });
 
-    // Staff Search logic
-    document.getElementById('staffSearchInput').addEventListener('input', e => {
-        const val = e.target.value.toLowerCase();
-        const box = document.getElementById('staffDropdownOptions');
-        if(!val) { box.style.display = 'none'; return; }
-        
-        const filtered = state.staffDatabase.filter(s => s.staffName.toLowerCase().includes(val) || s.staffId.toLowerCase().includes(val));
-        
+   // Staff Search logic — FIXED for number/string IDs from Google Sheets
+document.getElementById('staffSearchInput').addEventListener('input', e => {
+    const val = String(e.target.value || '').trim().toLowerCase();
+    const box = document.getElementById('staffDropdownOptions');
+
+    if (!val) {
+        box.style.display = 'none';
+        return;
+    }
+
+    const filtered = (state.staffDatabase || []).filter(s => {
+        const name = String(s.staffName || '').toLowerCase();
+        const id = String(s.staffId || '').toLowerCase();
+        return name.includes(val) || id.includes(val);
+    });
+
+    if (filtered.length === 0) {
+        box.innerHTML = `
+            <div class="dropdown-item" style="color:var(--text-secondary); cursor:default;">
+                No match found
+            </div>
+            <div class="dropdown-item" style="color:var(--accent-warm)" onclick="showManualEntry()">
+                + Enter manually
+            </div>`;
+    } else {
         box.innerHTML = filtered.map(s => `
-            <div class="dropdown-item" onclick="selectStaffFromDropdown('${s.staffId}')">
-                <div class="dropdown-item-name">${s.staffName} <span class="badge badge-purple" style="margin-left:8px;">${s.designation}</span></div>
+            <div class="dropdown-item" onclick="selectStaffFromDropdown('${String(s.staffId)}')">
+                <div class="dropdown-item-name">
+                    ${s.staffName}
+                    <span class="badge badge-purple" style="margin-left:8px;">${s.designation}</span>
+                </div>
                 <div class="dropdown-item-id">${s.staffId}</div>
             </div>
-        `).join('') + `<div class="dropdown-item" style="color:var(--accent-warm)" onclick="showManualEntry()">+ Enter manually</div>`;
-        
-        box.style.display = 'block';
-    });
+        `).join('') + `
+            <div class="dropdown-item" style="color:var(--accent-warm)" onclick="showManualEntry()">
+                + Enter manually
+            </div>`;
+    }
+
+    box.style.display = 'block';
+});
     
     setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 1500);
 });
@@ -476,8 +500,17 @@ async function apiCall(params) {
 }
 
 async function loadStaffDB() {
-    const res = await apiCall({action: 'getStaff'});
-    if(res.status === 'success') state.staffDatabase = res.data || [];
+    const res = await apiCall({ action: 'getStaff' });
+    if (res.status === 'success') {
+        state.staffDatabase = res.data || [];
+        console.log('StaffDB loaded:', state.staffDatabase.length, state.staffDatabase);
+        if (state.staffDatabase.length === 0) {
+            showToast('StaffDB empty — check Google Sheet', 'error');
+        }
+    } else {
+        showToast('Failed to load StaffDB', 'error');
+        console.error('getStaff failed', res);
+    }
 }
 
 // ============================================
@@ -529,25 +562,46 @@ function captureFace() {
 }
 
 function selectStaffFromDropdown(id) {
-    const staff = state.staffDatabase.find(s=>s.staffId === id);
-    if(!staff) return;
-    
-    document.getElementById('staffSearchInput').value = staff.staffName;
+    const staff = (state.staffDatabase || []).find(s => String(s.staffId) === String(id));
+    if (!staff) {
+        showToast('Staff not found', 'error');
+        return;
+    }
+
+    document.getElementById('staffSearchInput').value = staff.staffName + ' (' + staff.staffId + ')';
     document.getElementById('staffDropdownOptions').style.display = 'none';
-    
-    state.currentStaff = {staffId: staff.staffId, staffName: staff.staffName, designation: staff.designation, faceData: state.capturedFaceData};
-    
+
+    state.currentStaff = {
+        staffId: String(staff.staffId),
+        staffName: staff.staffName,
+        designation: staff.designation,
+        faceData: state.capturedFaceData || ''
+    };
+
     document.getElementById('selectedStaffInfo').innerHTML = `
         <div class="staff-info-card" style="border-color:var(--accent);">
-            <div class="staff-info-row"><div class="staff-info-label">Name</div><div class="staff-info-value">${staff.staffName}</div></div>
-            <div class="staff-info-row"><div class="staff-info-label">ID</div><div class="staff-info-value">${staff.staffId}</div></div>
-            <div style="text-align:center; margin-top:8px; color:var(--accent); font-weight:700;"><i class="fas fa-check-circle"></i> Verified</div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">Name</div>
+                <div class="staff-info-value">${staff.staffName}</div>
+            </div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">ID</div>
+                <div class="staff-info-value">${staff.staffId}</div>
+            </div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">Designation</div>
+                <div class="staff-info-value"><span class="badge badge-purple">${staff.designation}</span></div>
+            </div>
+            <div style="text-align:center; margin-top:10px; color:var(--accent); font-weight:700;">
+                <i class="fas fa-check-circle"></i> Identity Verified
+            </div>
         </div>
     `;
     document.getElementById('selectedStaffInfo').style.display = 'block';
     document.getElementById('btnNext2').disabled = false;
-}
 
+    showToast('Welcome, ' + staff.staffName, 'success');
+}
 function showManualEntry() {
     stopCamera();
     document.getElementById('faceScanCard').style.display = 'none';
