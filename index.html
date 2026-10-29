@@ -1,0 +1,2708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Station Takeover System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #7C5CFC;
+            --primary-light: #A78BFA;
+            --primary-dark: #5B3FD6;
+            --secondary: #F472B6;
+            --secondary-light: #F9A8D4;
+            --accent: #34D399;
+            --accent-warm: #FBBF24;
+            --bg-main: #F5F0FF;
+            --bg-card: #FFFFFF;
+            --bg-glass: rgba(255, 255, 255, 0.75);
+            --text-primary: #1E1B4B;
+            --text-secondary: #6B7280;
+            --text-light: #9CA3AF;
+            --border: #E5E7EB;
+            --border-focus: #A78BFA;
+            --shadow-sm: 0 1px 3px rgba(124, 92, 252, 0.08);
+            --shadow-md: 0 4px 16px rgba(124, 92, 252, 0.12);
+            --shadow-lg: 0 8px 32px rgba(124, 92, 252, 0.18);
+            --shadow-glow: 0 0 20px rgba(124, 92, 252, 0.25);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(124, 92, 252, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(244, 114, 182, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 0.05) 0%, transparent 50%);
+            z-index: -1;
+            animation: bgFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 1%) rotate(1deg); }
+            66% { transform: translate(-1%, 2%) rotate(-1deg); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--primary-light); 
+            border-radius: 10px; 
+        }
+
+        /* Loading Screen */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin-bottom: 24px;
+            animation: logoPulse 1.5s ease-in-out infinite;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .loading-text {
+            color: white;
+            font-family: 'Nunito', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+        }
+
+        .loading-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .loading-bar-fill {
+            height: 100%;
+            background: white;
+            border-radius: 4px;
+            animation: loadBar 2s ease-in-out;
+            width: 100%;
+        }
+
+        @keyframes loadBar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(124, 92, 252, 0.1);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .header-title {
+            font-family: 'Nunito', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: 11px;
+            color: var(--text-light);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .header-time {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            background: var(--bg-main);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .progress-steps {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-light);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 3px solid transparent;
+        }
+
+        .step-circle.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            box-shadow: var(--shadow-glow);
+            transform: scale(1.1);
+        }
+
+        .step-circle.completed {
+            background: var(--accent);
+            color: white;
+            border-color: rgba(52, 211, 153, 0.3);
+        }
+
+        .step-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-top: 6px;
+            text-align: center;
+            transition: color 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .step-label.active {
+            color: var(--primary);
+        }
+
+        .step-label.completed {
+            color: var(--accent);
+        }
+
+        .step-line {
+            width: 60px;
+            height: 3px;
+            background: var(--border);
+            margin: 0 4px;
+            margin-bottom: 20px;
+            border-radius: 3px;
+            transition: background 0.4s ease;
+        }
+
+        .step-line.completed {
+            background: linear-gradient(90deg, var(--accent), var(--primary));
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 24px 16px;
+            min-height: calc(100vh - 140px);
+        }
+
+        /* Screen Sections */
+        .screen {
+            display: none;
+            animation: screenIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes screenIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-family: 'Nunito', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .card-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        /* Station Selection */
+        .station-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .station-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--bg-card);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .station-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .station-item:hover {
+            border-color: var(--primary-light);
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .station-item:hover::before {
+            opacity: 1;
+        }
+
+        .station-item.selected {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(124, 92, 252, 0.05) 0%, rgba(244, 114, 182, 0.05) 100%);
+            box-shadow: var(--shadow-md);
+        }
+
+        .station-item.selected::before {
+            opacity: 1;
+        }
+
+        .station-code {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            min-width: 52px;
+            text-align: center;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .station-name {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .station-check {
+            margin-left: auto;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            color: transparent;
+        }
+
+        .station-item.selected .station-check {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 32px;
+            border-radius: var(--radius-md);
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.5s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .btn:active::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(124, 92, 252, 0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(124, 92, 252, 0.45);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-main);
+            color: var(--primary);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary-light);
+            background: rgba(124, 92, 252, 0.05);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(52, 211, 153, 0.35);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(52, 211, 153, 0.45);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 10px;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        /* Camera */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 20px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: #000;
+            aspect-ratio: 4/3;
+            box-shadow: var(--shadow-lg);
+            border: 3px solid var(--primary-light);
+        }
+
+        .camera-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .camera-container canvas {
+            display: none;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .face-guide {
+            width: 180px;
+            height: 220px;
+            border: 3px dashed rgba(124, 92, 252, 0.6);
+            border-radius: 50% 50% 45% 45%;
+            position: relative;
+            animation: faceGuide 2s ease-in-out infinite;
+        }
+
+        @keyframes faceGuide {
+            0%, 100% { border-color: rgba(124, 92, 252, 0.4); }
+            50% { border-color: rgba(124, 92, 252, 0.8); }
+        }
+
+        .face-guide-text {
+            position: absolute;
+            bottom: -36px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.5);
+            padding: 4px 12px;
+            border-radius: 8px;
+        }
+
+        .camera-status {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .camera-status.detecting {
+            color: var(--accent-warm);
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .camera-status.detected {
+            color: var(--accent);
+            background: rgba(52, 211, 153, 0.1);
+        }
+
+        .camera-status.error {
+            color: #EF4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-label .required {
+            color: var(--secondary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: 'Quicksand', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--bg-card);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: 'Quicksand', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--bg-card);
+            transition: all 0.3s ease;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+
+        .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.1);
+        }
+
+        /* Staff Info Card */
+        .staff-info-card {
+            background: linear-gradient(135deg, rgba(124, 92, 252, 0.05) 0%, rgba(244, 114, 182, 0.05) 100%);
+            border: 2px solid var(--primary-light);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .staff-info-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(124, 92, 252, 0.1);
+        }
+
+        .staff-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .staff-info-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 120px;
+        }
+
+        .staff-info-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Equipment List */
+        .equipment-section {
+            margin-bottom: 20px;
+        }
+
+        .equipment-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .equipment-title {
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .equipment-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .equipment-item:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .eq-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .eq-name {
+            font-weight: 700;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .eq-qty {
+            background: var(--bg-main);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--primary);
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .eq-id {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .eq-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .eq-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .eq-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(124, 92, 252, 0.05);
+        }
+
+        .eq-btn.delete:hover {
+            border-color: #EF4444;
+            color: #EF4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        /* Checklist */
+        .checklist-container {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border);
+        }
+
+        .checklist-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .checklist-label {
+            font-size: 13px;
+            font-weight: 600;
+            flex: 1;
+            color: var(--text-primary);
+        }
+
+        .toggle-container {
+            display: flex;
+            gap: 4px;
+        }
+
+        .toggle-btn {
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            color: var(--text-light);
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        .toggle-btn.yes.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .toggle-btn.no.active {
+            background: #EF4444;
+            border-color: #EF4444;
+            color: white;
+        }
+
+        .checklist-remarks {
+            margin-top: 6px;
+            display: none;
+        }
+
+        .checklist-remarks.show {
+            display: block;
+        }
+
+        .checklist-remarks input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #FECACA;
+            border-radius: 8px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+            background: #FEF2F2;
+        }
+
+        .checklist-remarks input:focus {
+            border-color: #EF4444;
+        }
+
+        /* Key Signed Out */
+        .key-entry {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .key-entry input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .key-entry input:focus {
+            border-color: var(--primary);
+        }
+
+        .add-key-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(124, 92, 252, 0.08);
+            border: 2px dashed var(--primary-light);
+            border-radius: 10px;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        .add-key-btn:hover {
+            background: rgba(124, 92, 252, 0.15);
+        }
+
+        /* Previous Staff */
+        .prev-staff-card {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(244, 114, 182, 0.08) 100%);
+            border: 2px solid var(--accent-warm);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .prev-staff-title {
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent-warm);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            padding: 14px 20px;
+            box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: toastIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 280px;
+        }
+
+        .toast.success { border-left-color: var(--accent); }
+        .toast.error { border-left-color: #EF4444; }
+        .toast.warning { border-left-color: var(--accent-warm); }
+
+        .toast-icon {
+            font-size: 18px;
+        }
+
+        .toast.success .toast-icon { color: var(--accent); }
+        .toast.error .toast-icon { color: #EF4444; }
+        .toast.warning .toast-icon { color: var(--accent-warm); }
+
+        .toast-message {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: modalIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-title {
+            font-family: 'Nunito', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        /* Success Screen */
+        .success-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            margin: 0 auto 24px;
+            animation: successBounce 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(52, 211, 153, 0.35);
+        }
+
+        @keyframes successBounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .success-title {
+            font-family: 'Nunito', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .success-subtitle {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        /* Add Item Modal */
+        .add-item-form .form-group {
+            margin-bottom: 14px;
+        }
+
+        /* Edit inline */
+        .eq-edit-input {
+            width: 60px;
+            padding: 4px 8px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            outline: none;
+            color: var(--primary);
+        }
+
+        .eq-id-edit {
+            width: 120px;
+            padding: 4px 8px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner-dark {
+            border-color: rgba(124, 92, 252, 0.2);
+            border-top-color: var(--primary);
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-purple {
+            background: rgba(124, 92, 252, 0.1);
+            color: var(--primary);
+        }
+
+        .badge-green {
+            background: rgba(52, 211, 153, 0.1);
+            color: #059669;
+        }
+
+        .badge-pink {
+            background: rgba(244, 114, 182, 0.1);
+            color: #DB2777;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 16px 12px;
+            }
+            .card {
+                padding: 20px;
+                border-radius: var(--radius-md);
+            }
+            .header-title {
+                font-size: 16px;
+            }
+            .step-line {
+                width: 30px;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .btn-group .btn {
+                width: 100%;
+            }
+            .camera-container {
+                max-width: 100%;
+            }
+        }
+
+        /* Edit equipment modal tweaks */
+        .edit-eq-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 10px;
+            background: var(--bg-main);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .edit-eq-row input {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .edit-eq-row input:focus {
+            border-color: var(--primary);
+        }
+
+        .edit-eq-name { flex: 2; }
+        .edit-eq-qty { width: 60px; text-align: center; }
+        .edit-eq-id { flex: 1; }
+
+        /* Captured face preview */
+        .face-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--accent);
+            margin: 0 auto 16px;
+            display: block;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Manual entry toggle */
+        .manual-entry-link {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .manual-entry-link a {
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .manual-entry-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Previous staff manual fields */
+        .manual-prev-fields {
+            display: none;
+        }
+
+        .manual-prev-fields.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-logo">🚇</div>
+    <div class="loading-text">Loading System<span class="loading-dots"></span></div>
+    <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Header -->
+<header class="app-header">
+    <div class="header-left">
+        <div class="header-logo"><i class="fas fa-train-subway"></i></div>
+        <div>
+            <div class="header-title">Station Takeover</div>
+            <div class="header-subtitle">EQUIPMENT HANDOVER SYSTEM</div>
+        </div>
+    </div>
+    <div class="header-time" id="headerTime"></div>
+</header>
+
+<!-- Progress Steps -->
+<div class="progress-container">
+    <div class="progress-steps">
+        <div class="progress-step">
+            <div class="step-circle active" id="step1">1</div>
+            <div class="step-label active" id="stepLabel1">Station</div>
+        </div>
+        <div class="step-line" id="line1"></div>
+        <div class="progress-step">
+            <div class="step-circle" id="step2">2</div>
+            <div class="step-label" id="stepLabel2">Identity</div>
+        </div>
+        <div class="step-line" id="line2"></div>
+        <div class="progress-step">
+            <div class="step-circle" id="step3">3</div>
+            <div class="step-label" id="stepLabel3">Equipment</div>
+        </div>
+        <div class="step-line" id="line3"></div>
+        <div class="progress-step">
+            <div class="step-circle" id="step4">4</div>
+            <div class="step-label" id="stepLabel4">Submit</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<main class="main-content">
+
+    <!-- SCREEN 1: Station Selection -->
+    <div class="screen active" id="screen1">
+        <div class="card">
+            <div class="card-icon" style="background: linear-gradient(135deg, rgba(124, 92, 252, 0.1), rgba(244, 114, 182, 0.1));">
+                <span>🏢</span>
+            </div>
+            <div class="card-title">Select Station</div>
+            <div class="card-subtitle">Choose the station you are taking over from</div>
+            
+            <div class="station-grid" id="stationGrid">
+                <!-- Stations generated by JS -->
+            </div>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn btn-primary btn-block" id="btnNext1" disabled onclick="goToScreen(2)">
+                Next <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: Face Scan / Identity -->
+    <div class="screen" id="screen2">
+        <div class="card" id="faceScanCard">
+            <div class="card-icon" style="background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(124, 92, 252, 0.1));">
+                <span>📸</span>
+            </div>
+            <div class="card-title">Identity Verification</div>
+            <div class="card-subtitle">Position your face in the frame to identify yourself</div>
+
+            <div class="camera-status detecting" id="cameraStatus">
+                <i class="fas fa-circle-dot"></i> Initializing camera...
+            </div>
+
+            <div class="camera-container" id="cameraContainer">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+                <div class="camera-overlay">
+                    <div class="face-guide">
+                        <div class="face-guide-text">Align your face here</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="btnCapture" onclick="captureFace()">
+                <i class="fas fa-camera"></i> Capture Face
+            </button>
+
+            <div class="manual-entry-link">
+                <a onclick="showManualEntry()">
+                    <i class="fas fa-keyboard"></i> Enter details manually instead
+                </a>
+            </div>
+        </div>
+
+        <!-- Face Detected - Staff Found -->
+        <div class="card" id="staffFoundCard" style="display:none;">
+            <div class="card-icon" style="background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(52, 211, 153, 0.05));">
+                <span>✅</span>
+            </div>
+            <div class="card-title">Staff Identified</div>
+            <div class="card-subtitle">Please confirm your details below</div>
+
+            <img class="face-preview" id="facePreview" src="" alt="Captured Face">
+
+            <div class="staff-info-card">
+                <div class="staff-info-row">
+                    <div class="staff-info-label">Staff Name</div>
+                    <div class="staff-info-value" id="foundStaffName">—</div>
+                </div>
+                <div class="staff-info-row">
+                    <div class="staff-info-label">Staff ID</div>
+                    <div class="staff-info-value" id="foundStaffId">—</div>
+                </div>
+                <div class="staff-info-row">
+                    <div class="staff-info-label">Designation</div>
+                    <div class="staff-info-value" id="foundDesignation">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Entry Card -->
+        <div class="card" id="manualEntryCard" style="display:none;">
+            <div class="card-icon" style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(244, 114, 182, 0.1));">
+                <span>✏️</span>
+            </div>
+            <div class="card-title">Manual Entry</div>
+            <div class="card-subtitle">Enter your details and capture your face for future identification</div>
+
+            <div id="manualCameraSection">
+                <div class="camera-container" id="manualCameraContainer" style="max-width: 280px; margin-bottom: 16px;">
+                    <video id="manualVideo" autoplay playsinline></video>
+                    <canvas id="manualCanvas"></canvas>
+                    <div class="camera-overlay">
+                        <div class="face-guide" style="width: 140px; height: 170px;">
+                            <div class="face-guide-text">Capture your face</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm btn-block" onclick="captureManualFace()" style="margin-bottom: 16px;">
+                    <i class="fas fa-camera"></i> Capture Photo
+                </button>
+            </div>
+
+            <img class="face-preview" id="manualFacePreview" src="" alt="Captured" style="display:none;">
+
+            <div class="form-group">
+                <label class="form-label">Designation <span class="required">*</span></label>
+                <select class="form-select" id="manualDesignation">
+                    <option value="">Select designation</option>
+                    <option value="ASM">ASM</option>
+                    <option value="SM">SM</option>
+                    <option value="SSM">SSM</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Staff Name <span class="required">*</span></label>
+                <input type="text" class="form-input" id="manualName" placeholder="Enter your full name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Staff ID <span class="required">*</span></label>
+                <input type="text" class="form-input" id="manualStaffId" placeholder="Enter your staff ID">
+            </div>
+        </div>
+
+        <div class="btn-group" id="screen2Buttons" style="display:none;">
+            <button class="btn btn-secondary" onclick="goToScreen(1)">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <button class="btn btn-primary" onclick="goToScreen(3)">
+                Next <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 3: Equipment Check -->
+    <div class="screen" id="screen3">
+        <div class="card">
+            <div class="card-icon" style="background: linear-gradient(135deg, rgba(124, 92, 252, 0.1), rgba(52, 211, 153, 0.1));">
+                <span>📋</span>
+            </div>
+            <div class="card-title">Equipment Takeover</div>
+            <div class="card-subtitle" id="eqStationLabel">Checking equipment for station</div>
+
+            <!-- Previous Staff Info -->
+            <div class="prev-staff-card" id="prevStaffCard">
+                <div class="prev-staff-title">
+                    <i class="fas fa-user-clock"></i> Taking Over From
+                </div>
+                <div class="staff-info-card" style="border-color: var(--accent-warm); margin: 0;" id="prevStaffInfo">
+                    <div class="staff-info-row">
+                        <div class="staff-info-label">Staff Name</div>
+                        <div class="staff-info-value" id="prevStaffName">Loading...</div>
+                    </div>
+                    <div class="staff-info-row">
+                        <div class="staff-info-label">Staff ID</div>
+                        <div class="staff-info-value" id="prevStaffId">Loading...</div>
+                    </div>
+                    <div class="staff-info-row">
+                        <div class="staff-info-label">Designation</div>
+                        <div class="staff-info-value" id="prevDesignation">Loading...</div>
+                    </div>
+                </div>
+                <div class="manual-prev-fields" id="manualPrevFields">
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--accent-warm);">
+                        <div style="font-size: 13px; font-weight: 700; color: var(--accent-warm); margin-bottom: 12px;">
+                            <i class="fas fa-edit"></i> Enter Previous Staff Details Manually
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Previous Staff Name</label>
+                            <input type="text" class="form-input" id="prevManualName" placeholder="Enter name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Previous Staff ID</label>
+                            <input type="text" class="form-input" id="prevManualId" placeholder="Enter staff ID">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Previous Designation</label>
+                            <select class="form-select" id="prevManualDesignation">
+                                <option value="">Select</option>
+                                <option value="ASM">ASM</option>
+                                <option value="SM">SM</option>
+                                <option value="SSM">SSM</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment List -->
+            <div class="equipment-section" id="equipmentList">
+                <div class="equipment-header">
+                    <div class="equipment-title"><i class="fas fa-boxes-stacked"></i> Equipment List</div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary btn-sm" onclick="showAddItemModal()">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                </div>
+                <div id="equipmentItems">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+
+            <!-- Key Signed Out -->
+            <div class="equipment-section" id="keySignedOutSection">
+                <div class="equipment-header">
+                    <div class="equipment-title"><i class="fas fa-key"></i> Keys Signed Out</div>
+                </div>
+                <div id="keyEntries">
+                    <!-- Generated by JS -->
+                </div>
+                <button class="add-key-btn" onclick="addKeyEntry()">
+                    <i class="fas fa-plus"></i> Add Key Entry
+                </button>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="goToScreen(2)">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <button class="btn btn-success" onclick="goToScreen(4)">
+                Review & Submit <i class="fas fa-check"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 4: Review & Submit -->
+    <div class="screen" id="screen4">
+        <div class="card">
+            <div class="card-icon" style="background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(124, 92, 252, 0.1));">
+                <span>📝</span>
+            </div>
+            <div class="card-title">Review Submission</div>
+            <div class="card-subtitle">Please review all details before submitting</div>
+
+            <div id="reviewContent">
+                <!-- Generated by JS -->
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label class="form-label">Additional Remarks</label>
+                <textarea class="form-input" id="finalRemarks" rows="3" placeholder="Any additional notes..." style="resize: vertical;"></textarea>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="goToScreen(3)">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <button class="btn btn-success btn-block" id="btnSubmit" onclick="submitTakeover()">
+                <i class="fas fa-paper-plane"></i> Submit Takeover
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 5: Success -->
+    <div class="screen" id="screen5">
+        <div class="card">
+            <div class="success-screen">
+                <div class="success-icon"><i class="fas fa-check"></i></div>
+                <div class="success-title">Submitted! 🎉</div>
+                <div class="success-subtitle">Your station takeover has been recorded successfully.</div>
+                <div class="staff-info-card" id="successSummary">
+                    <!-- Generated by JS -->
+                </div>
+                <button class="btn btn-primary btn-block" onclick="resetSystem()" style="margin-top: 24px;">
+                    <i class="fas fa-redo"></i> New Takeover
+                </button>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- Add Item Modal -->
+<div class="modal-overlay" id="addItemModal">
+    <div class="modal-content">
+        <div class="modal-title"><i class="fas fa-plus-circle"></i> Add Equipment Item</div>
+        <div class="add-item-form">
+            <div class="form-group">
+                <label class="form-label">Item Name <span class="required">*</span></label>
+                <input type="text" class="form-input" id="newItemName" placeholder="e.g. BWC Live">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Quantity <span class="required">*</span></label>
+                <input type="number" class="form-input" id="newItemQty" placeholder="1" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Item ID</label>
+                <input type="text" class="form-input" id="newItemId" placeholder="e.g. BWC-L-002">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Requires BWC Checklist?</label>
+                <select class="form-select" id="newItemChecklist">
+                    <option value="NO">No</option>
+                    <option value="YES">Yes</option>
+                </select>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="closeModal('addItemModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="addNewItem()">Add Item</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal-overlay" id="editItemModal">
+    <div class="modal-content">
+        <div class="modal-title"><i class="fas fa-edit"></i> Edit Equipment</div>
+        <div class="add-item-form">
+            <div class="form-group">
+                <label class="form-label">Item Name</label>
+                <input type="text" class="form-input" id="editItemName">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Quantity</label>
+                <input type="number" class="form-input" id="editItemQty" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Item ID</label>
+                <input type="text" class="form-input" id="editItemId">
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="closeModal('editItemModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveEditItem()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// CONFIGURATION - PUT YOUR APPS SCRIPT URL HERE
+// ============================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbz40qCmBYkxP6aO31NTpBzyYDkbrYGxEf9XH_JOv_l8J8Hg7MDZWMfgr8jeRhyQgVoGTw/exec';
+
+// ============================================
+// STATE
+// ============================================
+let state = {
+    selectedStation: null,
+    currentStaff: null,
+    previousStaff: null,
+    equipment: [],
+    bwcChecklist: {},
+    keysSignedOut: [],
+    staffDatabase: [],
+    capturedFaceData: null,
+    editingIndex: -1
+};
+
+const STATIONS = [
+    { code: 'TE01', name: 'Woodlands North', full: 'TE01 Woodlands North' },
+    { code: 'TE02', name: 'Woodlands', full: 'TE02 Woodlands' },
+    { code: 'TE03', name: 'Woodlands South', full: 'TE03 Woodlands South' },
+    { code: 'TE04', name: 'Springleaf', full: 'TE04 Springleaf' },
+    { code: 'TE05', name: 'Lentor', full: 'TE05 Lentor' },
+    { code: 'TE06', name: 'Mayflower', full: 'TE06 Mayflower' },
+    { code: 'TE07', name: 'Brighthill', full: 'TE07 Brighthill' },
+    { code: 'TE08', name: 'Upper Thomson', full: 'TE08 Upper Thomson' },
+    { code: 'TE09', name: 'Caldecott', full: 'TE09 Caldecott' }
+];
+
+const BWC_CHECKLIST_ITEMS = [
+    'Physical Condition',
+    'Power On/Off',
+    'Date&Time Displayed Correct / Display Panel',
+    'Recording Condition',
+    'Indicator / Status Light is Functioning',
+    'Lanyard & Clip',
+    'Charger Cable'
+];
+
+// ============================================
+// INITIALIZATION
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    renderStations();
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // Load staff database
+    loadStaffDB();
+    
+    // Hide loading after 2s
+    setTimeout(() => {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+    }, 2200);
+});
+
+function updateTime() {
+    const now = new Date();
+    const options = { 
+        weekday: 'short', 
+        day: '2-digit', 
+        month: 'short', 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+    };
+    document.getElementById('headerTime').textContent = now.toLocaleDateString('en-SG', options);
+}
+
+// ============================================
+// API CALLS
+// ============================================
+async function apiCall(params) {
+    try {
+        const url = new URL(API_URL);
+        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+        
+        const response = await fetch(url.toString());
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('API Error:', error);
+        showToast('Connection error. Please try again.', 'error');
+        return { status: 'error', message: error.message };
+    }
+}
+
+async function loadStaffDB() {
+    const result = await apiCall({ action: 'getStaff' });
+    if (result.status === 'success') {
+        state.staffDatabase = result.data;
+        console.log('Staff DB loaded:', state.staffDatabase.length, 'records');
+    }
+}
+
+async function loadEquipment(station) {
+    const result = await apiCall({ action: 'getEquipment', station: station });
+    if (result.status === 'success') {
+        state.equipment = result.data;
+        return true;
+    }
+    return false;
+}
+
+async function loadPreviousStaff(station) {
+    const result = await apiCall({ action: 'getLastSubmission', station: station });
+    if (result.status === 'success' && result.data) {
+        state.previousStaff = result.data;
+        return true;
+    }
+    state.previousStaff = null;
+    return false;
+}
+
+// ============================================
+// STATION SELECTION (Screen 1)
+// ============================================
+function renderStations() {
+    const grid = document.getElementById('stationGrid');
+    grid.innerHTML = STATIONS.map(s => `
+        <div class="station-item" onclick="selectStation('${s.full}')" id="station-${s.code}">
+            <div class="station-code">${s.code}</div>
+            <div class="station-name">${s.name}</div>
+            <div class="station-check"><i class="fas fa-check"></i></div>
+        </div>
+    `).join('');
+}
+
+function selectStation(stationFull) {
+    // Remove previous selection
+    document.querySelectorAll('.station-item').forEach(el => el.classList.remove('selected'));
+    
+    // Find and select
+    const station = STATIONS.find(s => s.full === stationFull);
+    if (station) {
+        document.getElementById(`station-${station.code}`).classList.add('selected');
+        state.selectedStation = stationFull;
+        document.getElementById('btnNext1').disabled = false;
+    }
+}
+
+// ============================================
+// FACE SCAN / IDENTITY (Screen 2)
+// ============================================
+let videoStream = null;
+
+async function startCamera(videoElement) {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user', 
+                width: { ideal: 640 }, 
+                height: { ideal: 480 } 
+            } 
+        });
+        videoElement.srcObject = stream;
+        videoStream = stream;
+        
+        document.getElementById('cameraStatus').innerHTML = '<i class="fas fa-circle-dot"></i> Camera ready — Position your face and capture';
+        document.getElementById('cameraStatus').className = 'camera-status detected';
+        
+        return true;
+    } catch (error) {
+        console.error('Camera error:', error);
+        document.getElementById('cameraStatus').innerHTML = '<i class="fas fa-exclamation-circle"></i> Camera not available';
+        document.getElementById('cameraStatus').className = 'camera-status error';
+        return false;
+    }
+}
+
+function stopCamera() {
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+}
+
+function captureFace() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0);
+    
+    const faceData = canvas.toDataURL('image/jpeg', 0.8);
+    state.capturedFaceData = faceData;
+    
+    stopCamera();
+    
+    // Try to match face with database
+    // Since real face recognition requires ML models, we'll do a simple flow:
+    // Show the captured face and let user confirm from staff list or enter manually
+    matchStaff(faceData);
+}
+
+function matchStaff(faceData) {
+    // Simple matching: Since we can't do real face recognition in pure JS easily,
+    // we'll show a staff selection after capture, or use stored face data comparison
+    // For now, show a selection dialog from staff DB
+    
+    if (state.staffDatabase.length > 0) {
+        showStaffSelectionAfterCapture(faceData);
+    } else {
+        showManualEntry();
+    }
+}
+
+function showStaffSelectionAfterCapture(faceData) {
+    const faceScanCard = document.getElementById('faceScanCard');
+    faceScanCard.style.display = 'none';
+    
+    const staffFoundCard = document.getElementById('staffFoundCard');
+    staffFoundCard.style.display = 'block';
+    
+    document.getElementById('facePreview').src = faceData;
+    
+    // Create a staff selection within the found card
+    let staffHTML = `
+        <div style="margin-top: 16px;">
+            <label class="form-label">Select Your Profile:</label>
+            <select class="form-select" id="staffSelect" onchange="onStaffSelected()">
+                <option value="">-- Select your name --</option>
+                ${state.staffDatabase.map(s => 
+                    `<option value="${s.staffId}">${s.staffName} (${s.staffId}) - ${s.designation}</option>`
+                ).join('')}
+                <option value="manual">❌ I'm not in the list</option>
+            </select>
+        </div>
+    `;
+    
+    // Replace the static info with selection
+    const infoCard = staffFoundCard.querySelector('.staff-info-card');
+    infoCard.innerHTML = staffHTML;
+    
+    document.getElementById('screen2Buttons').style.display = 'flex';
+}
+
+function onStaffSelected() {
+    const select = document.getElementById('staffSelect');
+    const val = select.value;
+    
+    if (val === 'manual') {
+        document.getElementById('staffFoundCard').style.display = 'none';
+        showManualEntry();
+        return;
+    }
+    
+    if (val) {
+        const staff = state.staffDatabase.find(s => s.staffId === val);
+        if (staff) {
+            state.currentStaff = {
+                staffId: staff.staffId,
+                staffName: staff.staffName,
+                designation: staff.designation,
+                faceData: state.capturedFaceData
+            };
+            
+            // Update display
+            document.getElementById('foundStaffName').textContent = staff.staffName;
+            document.getElementById('foundStaffId').textContent = staff.staffId;
+            document.getElementById('foundDesignation').textContent = staff.designation;
+            
+            // Replace the select with confirmed info
+            const infoCard = document.getElementById('staffFoundCard').querySelector('.staff-info-card');
+            infoCard.innerHTML = `
+                <div class="staff-info-row">
+                    <div class="staff-info-label">Staff Name</div>
+                    <div class="staff-info-value">${staff.staffName}</div>
+                </div>
+                <div class="staff-info-row">
+                    <div class="staff-info-label">Staff ID</div>
+                    <div class="staff-info-value">${staff.staffId}</div>
+                </div>
+                <div class="staff-info-row">
+                    <div class="staff-info-label">Designation</div>
+                    <div class="staff-info-value"><span class="badge badge-purple">${staff.designation}</span></div>
+                </div>
+            `;
+            
+            showToast('Identity confirmed!', 'success');
+        }
+    }
+}
+
+function showManualEntry() {
+    document.getElementById('faceScanCard').style.display = 'none';
+    document.getElementById('staffFoundCard').style.display = 'none';
+    document.getElementById('manualEntryCard').style.display = 'block';
+    document.getElementById('screen2Buttons').style.display = 'flex';
+    
+    stopCamera();
+    
+    // Start camera for manual entry
+    setTimeout(() => {
+        startCamera(document.getElementById('manualVideo'));
+    }, 300);
+}
+
+function captureManualFace() {
+    const video = document.getElementById('manualVideo');
+    const canvas = document.getElementById('manualCanvas');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0);
+    
+    state.capturedFaceData = canvas.toDataURL('image/jpeg', 0.8);
+    
+    document.getElementById('manualFacePreview').src = state.capturedFaceData;
+    document.getElementById('manualFacePreview').style.display = 'block';
+    document.getElementById('manualCameraSection').style.display = 'none';
+    
+    // Stop the manual camera
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+    
+    showToast('Photo captured!', 'success');
+}
+
+function validateManualEntry() {
+    const designation = document.getElementById('manualDesignation').value;
+    const name = document.getElementById('manualName').value.trim();
+    const staffId = document.getElementById('manualStaffId').value.trim();
+    
+    if (!designation || !name || !staffId) {
+        showToast('Please fill in all required fields', 'warning');
+        return false;
+    }
+    
+    state.currentStaff = {
+        staffId: staffId,
+        staffName: name,
+        designation: designation,
+        faceData: state.capturedFaceData || ''
+    };
+    
+    // Add to database
+    apiCall({ 
+        action: 'addStaff', 
+        data: JSON.stringify({
+            staffId: staffId,
+            staffName: name,
+            designation: designation,
+            faceData: ''
+        })
+    });
+    
+    return true;
+}
+
+// ============================================
+// EQUIPMENT CHECK (Screen 3)
+// ============================================
+function renderEquipment() {
+    const container = document.getElementById('equipmentItems');
+    
+    let html = '';
+    
+    state.equipment.forEach((item, index) => {
+        const isKeySigned = item.itemName === 'Key Signed Out';
+        if (isKeySigned) return; // Handle separately
+        
+        const isBWC = item.checklistRequired === 'YES';
+        
+        html += `
+            <div class="equipment-item" id="eq-${index}">
+                <div class="eq-row">
+                    <div style="flex: 1;">
+                        <div class="eq-name">
+                            ${getItemIcon(item.itemName)} ${item.itemName}
+                        </div>
+                        <div class="eq-id">ID: ${item.itemId}</div>
+                    </div>
+                    <div class="eq-qty">× ${item.quantity}</div>
+                    <div class="eq-actions">
+                        <button class="eq-btn" onclick="editEquipment(${index})" title="Edit">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button class="eq-btn delete" onclick="removeEquipment(${index})" title="Remove">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                ${isBWC ? renderBWCChecklist(item.itemName, index) : ''}
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Initialize checklist states
+    initializeChecklists();
+}
+
+function getItemIcon(name) {
+    const icons = {
+        'BWC Live': '📹',
+        'BWC NON-Live': '📷',
+        'PSC KeyPress': '🔑',
+        'SCD Keys': '🗝️',
+        'Train Manning Bag': '👜',
+        'Platform Manning Bag': '🎒',
+        'TETRA': '📻',
+        'Key Signed Out': '🔐'
+    };
+    return icons[name] || '📦';
+}
+
+function renderBWCChecklist(itemName, eqIndex) {
+    const checklistId = `checklist-${eqIndex}`;
+    
+    let html = `
+        <div class="checklist-container">
+            <div class="checklist-title">
+                <i class="fas fa-clipboard-check"></i> BWC Checklist — ${itemName}
+            </div>
+    `;
+    
+    BWC_CHECKLIST_ITEMS.forEach((item, idx) => {
+        const key = `${eqIndex}-${idx}`;
+        html += `
+            <div class="checklist-item">
+                <div class="checklist-label">${item}</div>
+                <div class="toggle-container">
+                    <button class="toggle-btn yes active" id="yes-${key}" onclick="toggleChecklist('${key}', 'yes')">Yes</button>
+                    <button class="toggle-btn no" id="no-${key}" onclick="toggleChecklist('${key}', 'no')">No</button>
+                </div>
+            </div>
+            <div class="checklist-remarks" id="remarks-${key}">
+                <input type="text" placeholder="Enter remarks for ${item}" id="remarks-input-${key}">
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+function initializeChecklists() {
+    // Set all BWC checklist items to YES by default
+    state.equipment.forEach((item, eqIndex) => {
+        if (item.checklistRequired === 'YES') {
+            BWC_CHECKLIST_ITEMS.forEach((_, idx) => {
+                const key = `${eqIndex}-${idx}`;
+                if (!state.bwcChecklist[key]) {
+                    state.bwcChecklist[key] = { status: 'yes', remarks: '' };
+                }
+            });
+        }
+    });
+}
+
+function toggleChecklist(key, value) {
+    const yesBtn = document.getElementById(`yes-${key}`);
+    const noBtn = document.getElementById(`no-${key}`);
+    const remarksDiv = document.getElementById(`remarks-${key}`);
+    
+    if (value === 'yes') {
+        yesBtn.classList.add('active');
+        noBtn.classList.remove('active');
+        remarksDiv.classList.remove('show');
+        state.bwcChecklist[key] = { status: 'yes', remarks: '' };
+    } else {
+        noBtn.classList.add('active');
+        yesBtn.classList.remove('active');
+        remarksDiv.classList.add('show');
+        state.bwcChecklist[key] = { status: 'no', remarks: '' };
+    }
+}
+
+function editEquipment(index) {
+    state.editingIndex = index;
+    const item = state.equipment[index];
+    
+    document.getElementById('editItemName').value = item.itemName;
+    document.getElementById('editItemQty').value = item.quantity;
+    document.getElementById('editItemId').value = item.itemId;
+    
+    document.getElementById('editItemModal').classList.add('active');
+}
+
+function saveEditItem() {
+    const index = state.editingIndex;
+    if (index < 0) return;
+    
+    state.equipment[index].itemName = document.getElementById('editItemName').value;
+    state.equipment[index].quantity = parseInt(document.getElementById('editItemQty').value) || 0;
+    state.equipment[index].itemId = document.getElementById('editItemId').value;
+    
+    closeModal('editItemModal');
+    renderEquipment();
+    
+    // Save to Google Sheet
+    saveEquipmentToSheet();
+    
+    showToast('Equipment updated!', 'success');
+}
+
+function removeEquipment(index) {
+    if (confirm('Remove this equipment item?')) {
+        state.equipment.splice(index, 1);
+        renderEquipment();
+        saveEquipmentToSheet();
+        showToast('Item removed', 'warning');
+    }
+}
+
+function showAddItemModal() {
+    document.getElementById('newItemName').value = '';
+    document.getElementById('newItemQty').value = '';
+    document.getElementById('newItemId').value = '';
+    document.getElementById('newItemChecklist').value = 'NO';
+    document.getElementById('addItemModal').classList.add('active');
+}
+
+function addNewItem() {
+    const name = document.getElementById('newItemName').value.trim();
+    const qty = parseInt(document.getElementById('newItemQty').value) || 0;
+    const id = document.getElementById('newItemId').value.trim();
+    const checklist = document.getElementById('newItemChecklist').value;
+    
+    if (!name) {
+        showToast('Please enter item name', 'warning');
+        return;
+    }
+    
+    state.equipment.push({
+        itemName: name,
+        quantity: qty,
+        itemId: id || 'N/A',
+        checklistRequired: checklist
+    });
+    
+    closeModal('addItemModal');
+    renderEquipment();
+    saveEquipmentToSheet();
+    
+    showToast('Item added!', 'success');
+}
+
+async function saveEquipmentToSheet() {
+    const items = state.equipment.map(e => ({
+        itemName: e.itemName,
+        quantity: e.quantity,
+        itemId: e.itemId,
+        checklistRequired: e.checklistRequired || 'NO'
+    }));
+    
+    await apiCall({
+        action: 'updateEquipment',
+        station: state.selectedStation,
+        items: JSON.stringify(items)
+    });
+}
+
+// Key Signed Out
+function renderKeyEntries() {
+    const container = document.getElementById('keyEntries');
+    let html = '';
+    
+    state.keysSignedOut.forEach((entry, index) => {
+        html += `
+            <div class="key-entry" id="key-${index}">
+                <input type="text" placeholder="Key Tag No." value="${entry.tagNo || ''}" 
+                    onchange="updateKeyEntry(${index}, 'tagNo', this.value)">
+                <input type="text" placeholder="Description" value="${entry.description || ''}" 
+                    onchange="updateKeyEntry(${index}, 'description', this.value)">
+                <button class="eq-btn delete" onclick="removeKeyEntry(${index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function addKeyEntry() {
+    state.keysSignedOut.push({ tagNo: '', description: '' });
+    renderKeyEntries();
+}
+
+function updateKeyEntry(index, field, value) {
+    state.keysSignedOut[index][field] = value;
+}
+
+function removeKeyEntry(index) {
+    state.keysSignedOut.splice(index, 1);
+    renderKeyEntries();
+}
+
+// ============================================
+// REVIEW & SUBMIT (Screen 4)
+// ============================================
+function renderReview() {
+    const container = document.getElementById('reviewContent');
+    
+    // Collect BWC checklist remarks
+    document.querySelectorAll('[id^="remarks-input-"]').forEach(input => {
+        const key = input.id.replace('remarks-input-', '');
+        if (state.bwcChecklist[key]) {
+            state.bwcChecklist[key].remarks = input.value;
+        }
+    });
+    
+    // Get previous staff details
+    let prevName = '', prevId = '', prevDesig = '';
+    if (state.previousStaff) {
+        prevName = state.previousStaff.staffName;
+        prevId = state.previousStaff.staffId;
+        prevDesig = state.previousStaff.designation;
+    }
+    
+    // Check if manual prev staff
+    const manualPrevName = document.getElementById('prevManualName')?.value;
+    const manualPrevId = document.getElementById('prevManualId')?.value;
+    const manualPrevDesig = document.getElementById('prevManualDesignation')?.value;
+    
+    if (manualPrevName) prevName = manualPrevName;
+    if (manualPrevId) prevId = manualPrevId;
+    if (manualPrevDesig) prevDesig = manualPrevDesig;
+    
+    let html = `
+        <div class="staff-info-card" style="margin-bottom: 16px;">
+            <div style="font-weight: 800; font-size: 14px; color: var(--primary); margin-bottom: 12px;">
+                <i class="fas fa-map-marker-alt"></i> Station
+            </div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">Station</div>
+                <div class="staff-info-value">${state.selectedStation}</div>
+            </div>
+        </div>
+        
+        <div class="staff-info-card" style="margin-bottom: 16px;">
+            <div style="font-weight: 800; font-size: 14px; color: var(--primary); margin-bottom: 12px;">
+                <i class="fas fa-user"></i> Taking Over (You)
+            </div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">Name</div>
+                <div class="staff-info-value">${state.currentStaff?.staffName || '—'}</div>
+            </div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">Staff ID</div>
+                <div class="staff-info-value">${state.currentStaff?.staffId || '—'}</div>
+            </div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">Designation</div>
+                <div class="staff-info-value"><span class="badge badge-purple">${state.currentStaff?.designation || '—'}</span></div>
+            </div>
+        </div>
+        
+        <div class="staff-info-card" style="margin-bottom: 16px; border-color: var(--accent-warm);">
+            <div style="font-weight: 800; font-size: 14px; color: var(--accent-warm); margin-bottom: 12px;">
+                <i class="fas fa-user-clock"></i> Taking Over From
+            </div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">Name</div>
+                <div class="staff-info-value">${prevName || 'N/A'}</div>
+            </div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">Staff ID</div>
+                <div class="staff-info-value">${prevId || 'N/A'}</div>
+            </div>
+            <div class="staff-info-row">
+                <div class="staff-info-label">Designation</div>
+                <div class="staff-info-value">${prevDesig || 'N/A'}</div>
+            </div>
+        </div>
+        
+        <div style="font-weight: 800; font-size: 14px; color: var(--primary); margin: 20px 0 12px;">
+            <i class="fas fa-boxes-stacked"></i> Equipment Summary
+        </div>
+    `;
+    
+    state.equipment.forEach((item, index) => {
+        if (item.itemName === 'Key Signed Out') return;
+        
+        html += `
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px;">
+                <span style="font-weight: 600;">${getItemIcon(item.itemName)} ${item.itemName}</span>
+                <span style="font-weight: 700; color: var(--primary);">× ${item.quantity} <span style="color: var(--text-light); font-size: 12px;">(${item.itemId})</span></span>
+            </div>
+        `;
+        
+        // Show BWC checklist status
+        if (item.checklistRequired === 'YES') {
+            BWC_CHECKLIST_ITEMS.forEach((checkItem, idx) => {
+                const key = `${index}-${idx}`;
+                const cl = state.bwcChecklist[key];
+                if (cl) {
+                    const statusIcon = cl.status === 'yes' ? '✅' : '❌';
+                    html += `
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0 4px 20px; font-size: 12px; color: var(--text-secondary);">
+                            <span>${checkItem}</span>
+                            <span>${statusIcon} ${cl.status === 'no' && cl.remarks ? '— ' + cl.remarks : ''}</span>
+                        </div>
+                    `;
+                }
+            });
+        }
+    });
+    
+    // Keys signed out
+    if (state.keysSignedOut.length > 0) {
+        html += `
+            <div style="font-weight: 800; font-size: 14px; color: var(--primary); margin: 20px 0 12px;">
+                <i class="fas fa-key"></i> Keys Signed Out
+            </div>
+        `;
+        state.keysSignedOut.forEach(key => {
+            if (key.tagNo || key.description) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px;">
+                        <span style="font-weight: 600;">🔐 ${key.tagNo}</span>
+                        <span style="color: var(--text-secondary);">${key.description}</span>
+                    </div>
+                `;
+            }
+        });
+    }
+    
+    container.innerHTML = html;
+}
+
+async function submitTakeover() {
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Submitting...';
+    
+    // Collect all data
+    let prevName = '', prevId = '';
+    if (state.previousStaff) {
+        prevName = state.previousStaff.staffName;
+        prevId = state.previousStaff.staffId;
+    }
+    const manualPrevName = document.getElementById('prevManualName')?.value;
+    const manualPrevId = document.getElementById('prevManualId')?.value;
+    if (manualPrevName) prevName = manualPrevName;
+    if (manualPrevId) prevId = manualPrevId;
+    
+    // Collect checklist remarks
+    document.querySelectorAll('[id^="remarks-input-"]').forEach(input => {
+        const key = input.id.replace('remarks-input-', '');
+        if (state.bwcChecklist[key]) {
+            state.bwcChecklist[key].remarks = input.value;
+        }
+    });
+    
+    const submitData = {
+        station: state.selectedStation,
+        staffId: state.currentStaff?.staffId || '',
+        staffName: state.currentStaff?.staffName || '',
+        designation: state.currentStaff?.designation || '',
+        previousStaffId: prevId,
+        previousStaffName: prevName,
+        equipment: state.equipment.filter(e => e.itemName !== 'Key Signed Out'),
+        bwcChecklist: state.bwcChecklist,
+        keysSignedOut: JSON.stringify(state.keysSignedOut),
+        remarks: document.getElementById('finalRemarks')?.value || ''
+    };
+    
+    const result = await apiCall({
+        action: 'submitTakeover',
+        data: JSON.stringify(submitData)
+    });
+    
+    if (result.status === 'success') {
+        // Show success screen
+        renderSuccessSummary();
+        goToScreen(5);
+        showToast('Takeover submitted successfully!', 'success');
+    } else {
+        showToast('Submission failed. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Takeover';
+    }
+}
+
+function renderSuccessSummary() {
+    const container = document.getElementById('successSummary');
+    const now = new Date().toLocaleString('en-SG', { 
+        timeZone: 'Asia/Singapore',
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    });
+    
+    container.innerHTML = `
+        <div class="staff-info-row">
+            <div class="staff-info-label">Station</div>
+            <div class="staff-info-value">${state.selectedStation}</div>
+        </div>
+        <div class="staff-info-row">
+            <div class="staff-info-label">Staff</div>
+            <div class="staff-info-value">${state.currentStaff?.staffName}</div>
+        </div>
+        <div class="staff-info-row">
+            <div class="staff-info-label">Submitted At</div>
+            <div class="staff-info-value">${now}</div>
+        </div>
+    `;
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+async function goToScreen(num) {
+    // Validation before moving forward
+    if (num === 2) {
+        if (!state.selectedStation) {
+            showToast('Please select a station', 'warning');
+            return;
+        }
+    }
+    
+    if (num === 3) {
+        // Validate identity
+        if (!state.currentStaff) {
+            // Check manual entry
+            if (document.getElementById('manualEntryCard').style.display !== 'none') {
+                if (!validateManualEntry()) return;
+            } else {
+                showToast('Please verify your identity first', 'warning');
+                return;
+            }
+        }
+        
+        // Load equipment
+        showToast('Loading equipment...', 'success');
+        await loadEquipment(state.selectedStation);
+        await loadPreviousStaff(state.selectedStation);
+        
+        renderEquipment();
+        renderKeyEntries();
+        renderPreviousStaff();
+        
+        document.getElementById('eqStationLabel').textContent = `Equipment for ${state.selectedStation}`;
+    }
+    
+    if (num === 4) {
+        renderReview();
+    }
+    
+    // Hide all screens
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    
+    // Show target screen
+    document.getElementById(`screen${num}`).classList.add('active');
+    
+    // Update progress
+    updateProgress(num);
+    
+    // Start camera on screen 2
+    if (num === 2) {
+        setTimeout(() => {
+            startCamera(document.getElementById('video'));
+        }, 300);
+    }
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderPreviousStaff() {
+    if (state.previousStaff) {
+        document.getElementById('prevStaffName').textContent = state.previousStaff.staffName;
+        document.getElementById('prevStaffId').textContent = state.previousStaff.staffId;
+        document.getElementById('prevDesignation').textContent = state.previousStaff.designation;
+        document.getElementById('manualPrevFields').classList.remove('show');
+    } else {
+        document.getElementById('prevStaffName').textContent = 'No previous record';
+        document.getElementById('prevStaffId').textContent = '—';
+        document.getElementById('prevDesignation').textContent = '—';
+        document.getElementById('manualPrevFields').classList.add('show');
+    }
+}
+
+function updateProgress(currentStep) {
+    for (let i = 1; i <= 4; i++) {
+        const circle = document.getElementById(`step${i}`);
+        const label = document.getElementById(`stepLabel${i}`);
+        
+        circle.classList.remove('active', 'completed');
+        label.classList.remove('active', 'completed');
+        
+        if (i < currentStep) {
+            circle.classList.add('completed');
+            circle.innerHTML = '<i class="fas fa-check"></i>';
+            label.classList.add('completed');
+        } else if (i === currentStep) {
+            circle.classList.add('active');
+            circle.textContent = i;
+            label.classList.add('active');
+        } else {
+            circle.textContent = i;
+        }
+    }
+    
+    for (let i = 1; i <= 3; i++) {
+        const line = document.getElementById(`line${i}`);
+        if (i < currentStep) {
+            line.classList.add('completed');
+        } else {
+            line.classList.remove('completed');
+        }
+    }
+}
+
+// ============================================
+// UTILITIES
+// ============================================
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-xmark',
+        warning: 'fa-triangle-exclamation'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div class="toast-icon"><i class="fas ${icons[type]}"></i></div>
+        <div class="toast-message">${message}</div>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'toastOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.classList.remove('active');
+        }
+    });
+});
+
+function resetSystem() {
+    stopCamera();
+    
+    state = {
+        selectedStation: null,
+        currentStaff: null,
+        previousStaff: null,
+        equipment: [],
+        bwcChecklist: {},
+        keysSignedOut: [],
+        staffDatabase: state.staffDatabase, // Keep staff DB
+        capturedFaceData: null,
+        editingIndex: -1
+    };
+    
+    // Reset UI
+    document.querySelectorAll('.station-item').forEach(el => el.classList.remove('selected'));
+    document.getElementById('btnNext1').disabled = true;
+    
+    // Reset screen 2
+    document.getElementById('faceScanCard').style.display = 'block';
+    document.getElementById('staffFoundCard').style.display = 'none';
+    document.getElementById('manualEntryCard').style.display = 'none';
+    document.getElementById('screen2Buttons').style.display = 'none';
+    document.getElementById('manualFacePreview').style.display = 'none';
+    document.getElementById('manualCameraSection').style.display = 'block';
+    
+    // Reset manual fields
+    document.getElementById('manualDesignation').value = '';
+    document.getElementById('manualName').value = '';
+    document.getElementById('manualStaffId').value = '';
+    document.getElementById('finalRemarks').value = '';
+    
+    // Reset submit button
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Takeover';
+    
+    goToScreen(1);
+}
+</script>
+
+</body>
+</html>
