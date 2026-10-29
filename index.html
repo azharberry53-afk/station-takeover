@@ -1975,7 +1975,6 @@ function handleDemoApi(params) {
 }
 
 async function loadStaffDB() {
-    // Restore any locally cached equipment edits
     Object.keys(DEMO_EQUIPMENT).forEach(st => {
         const cached = localStorage.getItem('eq_' + st);
         if (cached) {
@@ -1985,8 +1984,13 @@ async function loadStaffDB() {
 
     const result = await apiCall({ action: 'getStaff' });
     if (result.status === 'success') {
-        state.staffDatabase = result.data;
-        console.log('Staff loaded:', state.staffDatabase.length);
+        state.staffDatabase = result.data || [];
+        console.log('Staff loaded:', state.staffDatabase);
+        if (state.staffDatabase.length === 0) {
+            showToast('StaffDB is empty — check your Google Sheet', 'warning');
+        }
+    } else {
+        showToast('Could not load StaffDB', 'error');
     }
 }
 
@@ -2117,33 +2121,54 @@ function showStaffSelectionAfterCapture(faceData) {
     const infoCard = card.querySelector('.staff-info-card');
     infoCard.innerHTML = `
         <div style="margin-top: 8px;">
-            <label class="form-label">Select Your Profile:</label>
+            <label class="form-label">Select Your Profile <span class="required">*</span></label>
             <select class="form-select" id="staffSelect" onchange="onStaffSelected()">
                 <option value="">-- Select your name --</option>
                 ${state.staffDatabase.map(s =>
-                    `<option value="${s.staffId}">${s.staffName} (${s.staffId}) — ${s.designation}</option>`
+                    `<option value="${String(s.staffId)}">${s.staffName} (${s.staffId}) — ${s.designation}</option>`
                 ).join('')}
                 <option value="manual">I'm not in the list</option>
             </select>
         </div>
     `;
+
+    // Show buttons but disable Next until they pick a name
     document.getElementById('screen2Buttons').style.display = 'flex';
+    const nextBtn = document.querySelector('#screen2Buttons .btn-primary');
+    if (nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.innerHTML = 'Select name first';
+    }
 }
 
 function onStaffSelected() {
-    const val = document.getElementById('staffSelect').value;
+    const select = document.getElementById('staffSelect');
+    if (!select) return;
+
+    const val = String(select.value || '').trim();
+
+    if (!val) {
+        state.currentStaff = null;
+        return;
+    }
+
     if (val === 'manual') {
         document.getElementById('staffFoundCard').style.display = 'none';
         showManualEntry();
         return;
     }
-    if (!val) return;
 
-    const staff = state.staffDatabase.find(s => s.staffId === val);
-    if (!staff) return;
+    // Compare as strings so number/string mismatch from Google Sheets doesn't break it
+    const staff = state.staffDatabase.find(s => String(s.staffId) === val);
+
+    if (!staff) {
+        showToast('Staff not found in database', 'error');
+        state.currentStaff = null;
+        return;
+    }
 
     state.currentStaff = {
-        staffId: staff.staffId,
+        staffId: String(staff.staffId),
         staffName: staff.staffName,
         designation: staff.designation,
         faceData: state.capturedFaceData
@@ -2163,8 +2188,20 @@ function onStaffSelected() {
             <div class="staff-info-label">Designation</div>
             <div class="staff-info-value"><span class="badge badge-purple">${staff.designation}</span></div>
         </div>
+        <div style="margin-top:12px;text-align:center;">
+            <span class="badge badge-green"><i class="fas fa-check"></i> Identity Verified</span>
+        </div>
     `;
-    showToast('Identity confirmed!', 'success');
+
+    // Enable next clearly
+    const nextBtn = document.querySelector('#screen2Buttons .btn-primary');
+    if (nextBtn) {
+        nextBtn.disabled = false;
+        nextBtn.innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
+    }
+
+    showToast('Identity confirmed: ' + staff.staffName, 'success');
+    console.log('currentStaff set:', state.currentStaff);
 }
 
 function showManualEntry() {
@@ -2604,25 +2641,29 @@ async function goToScreen(num) {
         return;
     }
 
-    if (num === 3) {
-        if (!state.currentStaff) {
-            if (document.getElementById('manualEntryCard').style.display !== 'none') {
-                if (!validateManualEntry()) return;
-            } else {
-                showToast('Please verify your identity first', 'warning');
-                return;
-            }
-        }
+   if (num === 3) {
+    // If manual entry card is visible, validate & set currentStaff from form
+    const manualCard = document.getElementById('manualEntryCard');
+    const manualVisible = manualCard && manualCard.style.display !== 'none';
 
-        showToast('Loading equipment...', 'success');
-        await loadEquipment(state.selectedStation);
-        await loadPreviousStaff(state.selectedStation);
-        renderEquipment();
-        renderKeyEntries();
-        renderPreviousStaff();
-        document.getElementById('eqStationLabel').textContent =
-            'Equipment for ' + state.selectedStation;
+    if (manualVisible) {
+        if (!validateManualEntry()) return;
     }
+
+    if (!state.currentStaff || !state.currentStaff.staffName) {
+        showToast('Please select your name or enter details manually', 'warning');
+        return;
+    }
+
+    showToast('Loading equipment...', 'success');
+    await loadEquipment(state.selectedStation);
+    await loadPreviousStaff(state.selectedStation);
+    renderEquipment();
+    renderKeyEntries();
+    renderPreviousStaff();
+    document.getElementById('eqStationLabel').textContent =
+        'Equipment for ' + state.selectedStation;
+}
 
     if (num === 4) renderReview();
 
