@@ -80,11 +80,12 @@
         }
 
         /* Loading Screen */
-        .loading-overlay {
+
+             .loading-overlay {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: #000000; /* Dark background to match your logo design */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -98,24 +99,20 @@
             visibility: hidden;
         }
 
-        .loading-logo {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            margin-bottom: 24px;
-            animation: logoPulse 1.5s ease-in-out infinite;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        .custom-loading-logo {
+            width: 320px;
+            max-width: 85%;
+            height: auto;
+            margin-bottom: 30px;
+            animation: logoPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 10px 20px rgba(124, 92, 252, 0.4));
         }
 
         @keyframes logoPulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.08); }
+            50% { transform: scale(1.05); }
         }
+
 
         .loading-text {
             color: white;
@@ -1320,8 +1317,7 @@
 
 <!-- Loading Screen -->
 <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-logo">🚇</div>
-    <div class="loading-text">Loading System<span class="loading-dots"></span></div>
+    <img src="logo.png" alt="Station Takeover" class="custom-loading-logo">
     <div class="loading-bar"><div class="loading-bar-fill"></div></div>
 </div>
 
@@ -2093,13 +2089,20 @@ function captureFace() {
         showToast('Camera not ready yet', 'warning');
         return;
     }
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    
+    // Resize image to 320x240 to avoid Google Sheets 50k character limit
+    const targetWidth = 320;
+    const targetHeight = (video.videoHeight / video.videoWidth) * targetWidth;
+    
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
     const ctx = canvas.getContext('2d');
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0);
-    state.capturedFaceData = canvas.toDataURL('image/jpeg', 0.7);
+    ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+    
+    // Compress to 50% quality JPEG
+    state.capturedFaceData = canvas.toDataURL('image/jpeg', 0.5);
     stopCamera();
     matchStaff(state.capturedFaceData);
 }
@@ -2220,19 +2223,26 @@ function captureManualFace() {
         showToast('Camera not ready', 'warning');
         return;
     }
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    
+    // Resize image
+    const targetWidth = 320;
+    const targetHeight = (video.videoHeight / video.videoWidth) * targetWidth;
+    
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
     const ctx = canvas.getContext('2d');
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0);
-    state.capturedFaceData = canvas.toDataURL('image/jpeg', 0.7);
+    ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+    
+    state.capturedFaceData = canvas.toDataURL('image/jpeg', 0.5);
     document.getElementById('manualFacePreview').src = state.capturedFaceData;
     document.getElementById('manualFacePreview').style.display = 'block';
     document.getElementById('manualCameraSection').style.display = 'none';
     stopCamera();
     showToast('Photo captured!', 'success');
 }
+
 
 function validateManualEntry() {
     const designation = document.getElementById('manualDesignation').value;
@@ -2566,6 +2576,7 @@ function renderReview() {
     document.getElementById('reviewContent').innerHTML = html;
 }
 
+// Update submitTakeover to include the faceData payload
 async function submitTakeover() {
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true;
@@ -2588,6 +2599,7 @@ async function submitTakeover() {
         staffId: state.currentStaff?.staffId || '',
         staffName: state.currentStaff?.staffName || '',
         designation: state.currentStaff?.designation || '',
+        faceData: state.currentStaff?.faceData || state.capturedFaceData || '', // ADDED FACE DATA HERE
         previousStaffId: prevId,
         previousStaffName: prevName,
         equipment: state.equipment.filter(e => e.itemName !== 'Key Signed Out'),
