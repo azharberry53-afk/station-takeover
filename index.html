@@ -1172,52 +1172,60 @@ function renderReview() {
 }
 
 async function submitTakeover() {
-    const btn = document.getElementById('btnSubmit');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Submitting...';
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
 
-    // Collect remarks
-    document.querySelectorAll('[id^="ri-"]').forEach(input => {
-        const key = input.id.replace('ri-', '');
-        if (state.bwcChecklist[key]) state.bwcChecklist[key].remarks = input.value;
-    });
-
-    let prevName = state.previousStaff?.staffName || document.getElementById('prevManualName')?.value || '';
-    let prevId = state.previousStaff?.staffId || document.getElementById('prevManualId')?.value || '';
-
-    const data = {
-        station: state.selectedStation,
-        shift: state.selectedShift,
-        staffId: state.currentStaff.staffId,
-        staffName: state.currentStaff.staffName,
-        designation: state.currentStaff.designation,
-        faceData: state.currentStaff.faceData || '',
-        previousStaffId: prevId,
-        previousStaffName: prevName,
-        equipment: state.equipment.filter(e => e.itemName !== 'Key Signed Out'),
-        bwcChecklist: state.bwcChecklist,
-        keysSignedOut: JSON.stringify(state.keysSignedOut),
-        remarks: document.getElementById('finalRemarks').value || ''
+  try {
+    const payload = {
+      station: state.selectedStation,
+      shift: state.selectedShift,
+      staffId: state.currentStaff ? String(state.currentStaff.staffId) : document.getElementById('manualStaffId').value.trim(),
+      staffName: state.currentStaff ? state.currentStaff.staffName : document.getElementById('manualName').value.trim(),
+      designation: state.currentStaff ? state.currentStaff.designation : document.getElementById('manualDesig').value,
+      previousStaffId: state.prevStaff ? String(state.prevStaff.staffId) : '',
+      previousStaffName: state.prevStaff ? state.prevStaff.staffName : '',
+      equipment: state.equipment,
+      bwcChecklist: state.bwcChecklist,
+      keysSignedOut: state.keysSignedOut,
+      remarks: document.getElementById('takeoverRemarks').value.trim(),
+      faceData: state.capturedPhoto || ''
     };
 
-    const res = await apiCall({action: 'submitTakeover', data: JSON.stringify(data)});
-    
-    if (res.status === 'success') {
-        document.getElementById('successSummary').innerHTML = `
-            <div class="staff-info-card" style="border-color:var(--accent);">
-                <div class="staff-info-row"><div class="staff-info-label">Station</div><div class="staff-info-value">${state.selectedStation}</div></div>
-                <div class="staff-info-row"><div class="staff-info-label">Shift</div><div class="staff-info-value">${state.selectedShift}</div></div>
-                <div class="staff-info-row"><div class="staff-info-label">Staff</div><div class="staff-info-value">${state.currentStaff.staffName}</div></div>
-                <div class="staff-info-row"><div class="staff-info-label">Time</div><div class="staff-info-value">${new Date().toLocaleString('en-SG')}</div></div>
-            </div>
-        `;
-        goToScreen(5);
-        showToast('Submitted successfully!', 'success');
-    } else {
-        showToast('Submission failed', 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Takeover';
+    if (DEMO_MODE) {
+      await new Promise(r => setTimeout(r, 1200));
+      showToast('Submitted successfully (Demo Mode)!', 'success');
+      showSuccessModal(payload);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Confirm Takeover Handover';
+      return;
     }
+
+    // Send payload in the POST body with text/plain to avoid CORS preflight and URL length limits
+    const res = await fetch(`${API_URL}?action=submitTakeover`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+    if (result.status === 'success') {
+      showToast('Submitted successfully to Google Sheets!', 'success');
+      showSuccessModal(payload);
+    } else {
+      showToast('Submission failed: ' + (result.message || 'Unknown error'), 'error');
+      alert('Google Sheets Error: ' + (result.message || JSON.stringify(result)));
+    }
+  } catch (err) {
+    console.error('Submission error:', err);
+    showToast('Network error submitting form: ' + err.message, 'error');
+    alert('Submission Failed.\n\nError details: ' + err.message + '\n\nPlease check your Google Apps Script deployment settings (must be "Execute as: Me" and "Who has access: Anyone").');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Confirm Takeover Handover';
+  }
 }
 
 // ============================================
