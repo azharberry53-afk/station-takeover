@@ -1177,18 +1177,24 @@ async function submitTakeover() {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
 
   try {
+    // Safely get elements to avoid the "null" error
+    const remarksEl = document.getElementById('remarks');
+    const manualIdEl = document.getElementById('manualStaffId');
+    const manualNameEl = document.getElementById('manualName');
+    const manualDesigEl = document.getElementById('manualDesig');
+
     const payload = {
       station: state.selectedStation,
       shift: state.selectedShift,
-      staffId: state.currentStaff ? String(state.currentStaff.staffId) : document.getElementById('manualStaffId').value.trim(),
-      staffName: state.currentStaff ? state.currentStaff.staffName : document.getElementById('manualName').value.trim(),
-      designation: state.currentStaff ? state.currentStaff.designation : document.getElementById('manualDesig').value,
+      staffId: state.currentStaff ? String(state.currentStaff.staffId) : (manualIdEl ? manualIdEl.value.trim() : ''),
+      staffName: state.currentStaff ? state.currentStaff.staffName : (manualNameEl ? manualNameEl.value.trim() : ''),
+      designation: state.currentStaff ? state.currentStaff.designation : (manualDesigEl ? manualDesigEl.value : 'ASM'),
       previousStaffId: state.prevStaff ? String(state.prevStaff.staffId) : '',
       previousStaffName: state.prevStaff ? state.prevStaff.staffName : '',
       equipment: state.equipment,
       bwcChecklist: state.bwcChecklist,
       keysSignedOut: state.keysSignedOut,
-      remarks: document.getElementById('takeoverRemarks').value.trim(),
+      remarks: remarksEl ? remarksEl.value.trim() : '', // Fixed: using 'remarks' ID
       faceData: state.capturedPhoto || ''
     };
 
@@ -1201,27 +1207,25 @@ async function submitTakeover() {
       return;
     }
 
-    // Send payload in the POST body with text/plain to avoid CORS preflight and URL length limits
+    // Send payload to Google Sheets via POST
     const res = await fetch(`${API_URL}?action=submitTakeover`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     });
 
     const result = await res.json();
     if (result.status === 'success') {
-      showToast('Submitted successfully to Google Sheets!', 'success');
+      showToast('Submitted successfully!', 'success');
       showSuccessModal(payload);
     } else {
       showToast('Submission failed: ' + (result.message || 'Unknown error'), 'error');
-      alert('Google Sheets Error: ' + (result.message || JSON.stringify(result)));
+      alert('Error: ' + result.message);
     }
   } catch (err) {
     console.error('Submission error:', err);
-    showToast('Network error submitting form: ' + err.message, 'error');
-    alert('Submission Failed.\n\nError details: ' + err.message + '\n\nPlease check your Google Apps Script deployment settings (must be "Execute as: Me" and "Who has access: Anyone").');
+    showToast('Network error: ' + err.message, 'error');
+    alert('Submission Failed.\n\nCheck if your API_URL is correct and the Google Script is deployed as "Anyone".');
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Confirm Takeover Handover';
